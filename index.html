@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org; connect-src 'self' https://*.tile.openstreetmap.org; frame-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org; connect-src 'self' https://*.tile.openstreetmap.org; frame-src 'none';">
     <title>TravelGo - 智慧旅遊規劃</title>
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=10">
+    <link rel="stylesheet" href="css/style.css?v=11">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kosugi+Maru&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <!-- Leaflet Map -->
@@ -448,6 +448,42 @@
             </div>
         </div>
 
+        <!-- AI Chat Window -->
+        <div id="ai-chat-fab" class="ai-chat-fab" onclick="app.toggleAIChat()">
+            <i class="fas fa-robot"></i>
+            <span class="ai-chat-fab-badge" id="ai-chat-badge" style="display:none">1</span>
+        </div>
+        <div id="ai-chat-panel" class="ai-chat-panel hidden">
+            <div class="ai-chat-header">
+                <div class="ai-chat-header-left">
+                    <span class="ai-chat-avatar">🦫</span>
+                    <div>
+                        <div class="ai-chat-header-title">河狸旅遊助手</div>
+                        <div class="ai-chat-header-status">隨時幫你調整行程</div>
+                    </div>
+                </div>
+                <button class="ai-chat-close" onclick="app.toggleAIChat()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="ai-chat-messages" id="ai-chat-messages">
+                <div class="ai-chat-welcome">
+                    <span class="ai-chat-welcome-icon">🦫</span>
+                    <p>嗨！我是你的河狸旅遊助手～</p>
+                    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.3rem">你可以用自然語言告訴我想怎麼修改行程，例如：</p>
+                    <div class="ai-chat-suggestions" id="ai-chat-suggestions">
+                        <button class="ai-chat-suggestion" onclick="app.sendAIChatSuggestion(this.textContent)">把第一天的午餐換掉</button>
+                        <button class="ai-chat-suggestion" onclick="app.sendAIChatSuggestion(this.textContent)">第二天加一個景點</button>
+                        <button class="ai-chat-suggestion" onclick="app.sendAIChatSuggestion(this.textContent)">刪除第三天的晚餐</button>
+                        <button class="ai-chat-suggestion" onclick="app.sendAIChatSuggestion(this.textContent)">調整第一天行程時間</button>
+                        <button class="ai-chat-suggestion" onclick="app.sendAIChatSuggestion(this.textContent)">幫我總結目前行程</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ai-chat-input-area">
+                <input type="text" id="ai-chat-input" class="ai-chat-input" placeholder="輸入你想修改的內容..." onkeydown="if(event.key==='Enter')app.sendAIChat()">
+                <button class="ai-chat-send" onclick="app.sendAIChat()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
         <!-- Toast -->
         <div id="toast-container"></div>
 
@@ -474,9 +510,9 @@
         </nav>
     </div>
 
-    <script src="js/data.js?v=10"></script>
-    <script src="js/map.js?v=10"></script>
-    <script src="js/app.js?v=10"></script>
+    <script src="js/data.js?v=11"></script>
+    <script src="js/map.js?v=11"></script>
+    <script src="js/app.js?v=11"></script>
     <!-- PWA Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {

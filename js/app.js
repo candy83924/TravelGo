@@ -1018,16 +1018,19 @@ class TravelApp {
         }
 
         return `<div class="timeline-item ${item.type} ${warn ? 'closed' : ''}" data-day="${di}" data-item="${idx}">
-            <div class="timeline-time">
-                <span class="time-text" onclick="this.style.display='none';this.nextElementSibling.style.display='inline-block';this.nextElementSibling.focus()">${item.time}</span>
-                <input type="time" class="time-edit-input" value="${item.time}" style="display:none" onchange="app.updateItemTime(${di}, ${idx}, this.value);this.previousElementSibling.textContent=this.value;this.style.display='none';this.previousElementSibling.style.display='inline-block'" onblur="this.style.display='none';this.previousElementSibling.style.display='inline-block'">
-            </div>
-            <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.spotData?.name || item.title)}+${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
-            ${item.desc ? `<div class="timeline-desc">${item.desc}</div>` : ''}${warn}
-            <div class="timeline-actions">
-                ${item.spotData ? `<button class="btn-edit-item" onclick="event.stopPropagation();app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i></button>` : ''}
-                <button class="btn-edit-item" onclick="event.stopPropagation();app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i></button>
-                <button class="btn-edit-item" onclick="event.stopPropagation();app.removeItem(${di},${idx})" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
+            <div class="timeline-drag-handle" title="拖曳排序"><i class="fas fa-grip-vertical"></i></div>
+            <div class="timeline-item-content">
+                <div class="timeline-time">
+                    <span class="time-text" onclick="event.stopPropagation();this.style.display='none';this.nextElementSibling.style.display='inline-block';this.nextElementSibling.focus()">${item.time}</span>
+                    <input type="time" class="time-edit-input" value="${item.time}" style="display:none" onchange="app.updateItemTime(${di}, ${idx}, this.value);this.previousElementSibling.textContent=this.value;this.style.display='none';this.previousElementSibling.style.display='inline-block'" onblur="this.style.display='none';this.previousElementSibling.style.display='inline-block'">
+                </div>
+                <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.spotData?.name || item.title)}+${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
+                ${item.desc ? `<div class="timeline-desc">${item.desc}</div>` : ''}${warn}
+                <div class="timeline-actions">
+                    ${item.spotData ? `<button class="btn-edit-item" onclick="event.stopPropagation();app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i></button>` : ''}
+                    <button class="btn-edit-item" onclick="event.stopPropagation();app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-edit-item" onclick="event.stopPropagation();app.removeItem(${di},${idx})" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
+                </div>
             </div></div>`;
     }
 
@@ -1319,7 +1322,9 @@ class TravelApp {
                 ghostClass: 'sortable-ghost',
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
-                handle: '.timeline-item',
+                handle: '.timeline-drag-handle',
+                filter: '.btn-edit-item, .time-text, .time-edit-input, .gmaps-link, .timeline-actions, a',
+                preventOnFilter: false,
                 delay: 100,
                 delayOnTouchOnly: true,
                 onEnd: function(evt) {
@@ -1731,6 +1736,447 @@ class TravelApp {
         t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(30,41,59,0.85);color:white;padding:0.5rem 1rem;border-radius:20px;font-size:0.85rem;z-index:9999;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:fadeInUp 0.3s;border:1px solid rgba(255,255,255,0.1)';
         t.textContent = msg; document.body.appendChild(t);
         setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(), 300); }, 2000);
+    }
+
+    // ===== AI Chat Assistant =====
+    toggleAIChat() {
+        const panel = document.getElementById('ai-chat-panel');
+        const fab = document.getElementById('ai-chat-fab');
+        const badge = document.getElementById('ai-chat-badge');
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            fab.style.display = 'none';
+            badge.style.display = 'none';
+            document.getElementById('ai-chat-input').focus();
+        } else {
+            panel.classList.add('hidden');
+            fab.style.display = 'flex';
+        }
+        hapticFeedback('light');
+    }
+
+    sendAIChatSuggestion(text) {
+        document.getElementById('ai-chat-input').value = text;
+        this.sendAIChat();
+    }
+
+    sendAIChat() {
+        const input = document.getElementById('ai-chat-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        input.value = '';
+
+        // Hide welcome message on first send
+        const welcome = document.querySelector('.ai-chat-welcome');
+        if (welcome) welcome.style.display = 'none';
+
+        this._addChatMsg(msg, 'user');
+        this._showTyping();
+
+        setTimeout(() => {
+            this._hideTyping();
+            const result = this._processAICommand(msg);
+            this._addChatMsg(result.reply, 'bot', result.actions);
+        }, 600 + Math.random() * 400);
+    }
+
+    _addChatMsg(text, role, actions) {
+        const container = document.getElementById('ai-chat-messages');
+        const div = document.createElement('div');
+        div.className = `ai-msg ${role}`;
+        let html = '';
+        if (role === 'bot') html += '<span class="ai-msg-avatar">🦫</span> ';
+        html += sanitizeHTML(text).replace(/\n/g, '<br>');
+        if (actions && actions.length > 0) {
+            html += '<div class="ai-msg-actions">';
+            actions.forEach((a, i) => {
+                html += `<button class="ai-msg-action-btn" onclick="app._execChatAction(${i}, this)">${sanitizeHTML(a.label)}</button>`;
+            });
+            html += '</div>';
+        }
+        div.innerHTML = html;
+        if (actions) div._chatActions = actions;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    _showTyping() {
+        const container = document.getElementById('ai-chat-messages');
+        const div = document.createElement('div');
+        div.className = 'ai-chat-typing';
+        div.id = 'ai-typing-indicator';
+        div.innerHTML = '<span></span><span></span><span></span>';
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    _hideTyping() {
+        const el = document.getElementById('ai-typing-indicator');
+        if (el) el.remove();
+    }
+
+    _execChatAction(actionIndex, btnEl) {
+        const msgEl = btnEl.closest('.ai-msg');
+        const actions = msgEl?._chatActions;
+        if (!actions || !actions[actionIndex]) return;
+        const action = actions[actionIndex];
+        if (action.fn) {
+            action.fn();
+            this.renderItinerary();
+            this._addChatMsg(action.confirmMsg || '已完成修改！', 'bot');
+            hapticFeedback('success');
+        }
+    }
+
+    _processAICommand(msg) {
+        if (!this.generatedItinerary) {
+            return { reply: '你還沒有產生行程喔！請先在設定頁面產生行程，我才能幫你修改～', actions: [] };
+        }
+
+        const days = this.generatedItinerary.days;
+        const data = getDestData(this.selectedCity);
+        const m = msg.toLowerCase();
+
+        // Parse day number from message
+        const dayMatch = m.match(/第([一二三四五六七八九十\d]+)[天日]/);
+        let targetDay = null;
+        if (dayMatch) {
+            const numMap = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+            targetDay = numMap[dayMatch[1]] || parseInt(dayMatch[1]);
+        }
+        // Also match "day 1", "day1", "Day 1"
+        const dayMatch2 = m.match(/day\s*(\d+)/i);
+        if (!targetDay && dayMatch2) targetDay = parseInt(dayMatch2[1]);
+
+        // ===== SUMMARIZE =====
+        if (m.includes('總結') || m.includes('摘要') || m.includes('目前行程') || m.includes('看一下行程') || m.includes('行程概覽')) {
+            let summary = `目前行程：${this.generatedItinerary.cityName} ${days.length}天${days.length-1}夜\n住宿：${this.generatedItinerary.hotel.name}\n\n`;
+            days.forEach(d => {
+                summary += `【Day ${d.day}】${d.title}\n`;
+                d.items.forEach(item => {
+                    summary += `  ${item.time} ${item.title}\n`;
+                });
+                summary += '\n';
+            });
+            return { reply: summary, actions: [] };
+        }
+
+        // ===== DELETE / REMOVE =====
+        if (m.includes('刪除') || m.includes('移除') || m.includes('拿掉') || m.includes('取消') || m.includes('不要')) {
+            // Try to find specific item by name
+            const nameMatch = this._findItemByName(msg, days);
+            if (nameMatch) {
+                const { dayIdx, itemIdx, item } = nameMatch;
+                return {
+                    reply: `找到了「${item.title}」在 Day ${dayIdx + 1}，要幫你刪除嗎？`,
+                    actions: [{
+                        label: `確認刪除「${item.title}」`,
+                        fn: () => { days[dayIdx].items.splice(itemIdx, 1); },
+                        confirmMsg: `已刪除「${item.title}」！`
+                    }]
+                };
+            }
+            // Delete by meal type
+            if (targetDay) {
+                const di = targetDay - 1;
+                if (di < 0 || di >= days.length) return { reply: `沒有第 ${targetDay} 天的行程喔～`, actions: [] };
+                const mealType = m.includes('早餐') ? 'breakfast' : m.includes('午餐') ? 'lunch' : m.includes('晚餐') ? 'dinner' : null;
+                if (mealType) {
+                    const mealIdx = days[di].items.findIndex(i => i.mealType === mealType);
+                    if (mealIdx >= 0) {
+                        const mealItem = days[di].items[mealIdx];
+                        return {
+                            reply: `找到 Day ${targetDay} 的${mealType === 'breakfast' ? '早餐' : mealType === 'lunch' ? '午餐' : '晚餐'}：「${mealItem.title}」，要刪除嗎？`,
+                            actions: [{
+                                label: '確認刪除',
+                                fn: () => { days[di].items.splice(mealIdx, 1); },
+                                confirmMsg: `已刪除 Day ${targetDay} 的「${mealItem.title}」！`
+                            }]
+                        };
+                    }
+                }
+                return { reply: `找不到要刪除的項目，請說得更具體一些，例如：「刪除第一天的午餐」或「刪除太魯閣」`, actions: [] };
+            }
+            return { reply: '請告訴我要刪除哪一天的什麼項目？例如：「刪除第二天的午餐」或「刪除七星潭」', actions: [] };
+        }
+
+        // ===== SWAP / REPLACE =====
+        if (m.includes('換') || m.includes('替換') || m.includes('改成') || m.includes('換成')) {
+            if (targetDay) {
+                const di = targetDay - 1;
+                if (di < 0 || di >= days.length) return { reply: `沒有第 ${targetDay} 天的行程喔～`, actions: [] };
+
+                const mealType = m.includes('早餐') ? 'breakfast' : m.includes('午餐') ? 'lunch' : m.includes('晚餐') ? 'dinner' : null;
+                if (mealType) {
+                    const mealIdx = days[di].items.findIndex(i => i.mealType === mealType);
+                    if (mealIdx >= 0) {
+                        const currentMeal = days[di].items[mealIdx];
+                        const usedNames = new Set();
+                        days.forEach(d => d.items.forEach(i => usedNames.add(i.title)));
+                        const alternatives = data.restaurants.filter(r => !usedNames.has(r.name) && r.rating >= 3.5);
+                        if (alternatives.length === 0) return { reply: '沒有其他可替換的餐廳了～', actions: [] };
+                        const picks = alternatives.slice(0, 3);
+                        return {
+                            reply: `目前 Day ${targetDay} 的${mealType === 'breakfast' ? '早餐' : mealType === 'lunch' ? '午餐' : '晚餐'}是「${currentMeal.title}」，可以換成：`,
+                            actions: picks.map(r => ({
+                                label: `${r.name} (${r.rating}★ ~NT$${r.price})`,
+                                fn: () => {
+                                    days[di].items[mealIdx] = { ...currentMeal, title: r.name, desc: `${r.recommended?.[0] || r.type || ''} ~NT$${r.price}/人`, spotData: r };
+                                },
+                                confirmMsg: `已將 Day ${targetDay} 的餐點換成「${r.name}」！`
+                            }))
+                        };
+                    }
+                }
+
+                // Replace attraction
+                if (m.includes('景點') || (!mealType)) {
+                    const attrIdx = days[di].items.findIndex(i => i.type === 'attraction');
+                    if (attrIdx >= 0) {
+                        const currentAttr = days[di].items[attrIdx];
+                        const usedNames = new Set();
+                        days.forEach(d => d.items.forEach(i => usedNames.add(i.title)));
+                        const alternatives = data.attractions.filter(a => !usedNames.has(a.name) && a.rating >= 3.5);
+                        if (alternatives.length === 0) return { reply: '沒有其他可替換的景點了～', actions: [] };
+                        const picks = alternatives.slice(0, 3);
+                        return {
+                            reply: `Day ${targetDay} 的景點「${currentAttr.title}」可以換成：`,
+                            actions: picks.map(a => ({
+                                label: `${a.name} (${a.rating}★)`,
+                                fn: () => {
+                                    days[di].items[attrIdx] = { ...currentAttr, title: a.name, desc: a.description?.substring(0, 50) || '', spotData: a };
+                                },
+                                confirmMsg: `已將景點換成「${a.name}」！`
+                            }))
+                        };
+                    }
+                }
+            }
+
+            // Try to find specific item by name
+            const nameMatch = this._findItemByName(msg, days);
+            if (nameMatch) {
+                const { dayIdx, itemIdx, item } = nameMatch;
+                const isAttr = item.type === 'attraction';
+                const pool = isAttr ? data.attractions : data.restaurants;
+                const usedNames = new Set();
+                days.forEach(d => d.items.forEach(i => usedNames.add(i.title)));
+                const alternatives = pool.filter(p => !usedNames.has(p.name) && p.rating >= 3.5).slice(0, 3);
+                if (alternatives.length === 0) return { reply: '沒有可替換的項目了～', actions: [] };
+                return {
+                    reply: `「${item.title}」可以換成：`,
+                    actions: alternatives.map(a => ({
+                        label: `${a.name} (${a.rating}★)`,
+                        fn: () => {
+                            days[dayIdx].items[itemIdx] = { ...item, title: a.name, desc: a.description?.substring(0, 50) || a.type || '', spotData: a };
+                        },
+                        confirmMsg: `已換成「${a.name}」！`
+                    }))
+                };
+            }
+
+            return { reply: '請說清楚要換什麼，例如：「把第一天的午餐換掉」或「換掉七星潭」', actions: [] };
+        }
+
+        // ===== ADD =====
+        if (m.includes('加') || m.includes('新增') || m.includes('增加') || m.includes('多一個') || m.includes('再來一個')) {
+            const isRestaurant = m.includes('餐') || m.includes('吃') || m.includes('美食') || m.includes('餐廳');
+            const isAttraction = m.includes('景點') || m.includes('玩') || m.includes('逛') || m.includes('去');
+            const pool = isRestaurant ? data.restaurants : data.attractions;
+            const usedNames = new Set();
+            days.forEach(d => d.items.forEach(i => usedNames.add(i.title)));
+            const available = pool.filter(p => !usedNames.has(p.name) && p.rating >= 3.5);
+
+            if (available.length === 0) return { reply: '已經沒有更多可以新增的項目了～', actions: [] };
+
+            const di = targetDay ? targetDay - 1 : 0;
+            if (di < 0 || di >= days.length) return { reply: `沒有第 ${targetDay || '?'} 天的行程喔～`, actions: [] };
+
+            const picks = available.slice(0, 4);
+            return {
+                reply: `以下是推薦${isRestaurant ? '餐廳' : '景點'}，選一個加到 Day ${di + 1}：`,
+                actions: picks.map(p => ({
+                    label: `${p.name} (${p.rating}★${p.price ? ' ~NT$' + p.price : ''})`,
+                    fn: () => {
+                        const newItem = {
+                            time: '12:00',
+                            title: p.name,
+                            type: isRestaurant ? 'meal' : 'attraction',
+                            desc: p.description?.substring(0, 50) || p.type || '',
+                            spotData: p,
+                            cost: p.price || p.ticket || 0
+                        };
+                        days[di].items.push(newItem);
+                        days[di].items.sort((a, b) => a.time.localeCompare(b.time));
+                    },
+                    confirmMsg: `已將「${p.name}」加入 Day ${di + 1}！`
+                }))
+            };
+        }
+
+        // ===== ADJUST TIME =====
+        if (m.includes('時間') || m.includes('提前') || m.includes('延後') || m.includes('改時間') || m.includes('調整')) {
+            if (targetDay) {
+                const di = targetDay - 1;
+                if (di < 0 || di >= days.length) return { reply: `沒有第 ${targetDay} 天的行程喔～`, actions: [] };
+
+                // Check for specific time adjustment
+                const timeMatch = m.match(/(\d{1,2})[:\s：]?(\d{2})?/);
+                if (timeMatch && m.includes('改') || m.includes('調')) {
+                    // Show day's items for user to pick
+                    const dayItems = days[di].items;
+                    return {
+                        reply: `Day ${targetDay} 的行程如下，點選要調整時間的項目：`,
+                        actions: dayItems.map((item, idx) => ({
+                            label: `${item.time} ${item.title}`,
+                            fn: () => {
+                                // Shift everything by showing edit
+                                this.editItem(targetDay, idx);
+                            },
+                            confirmMsg: `已開啟編輯視窗，可以修改時間！`
+                        }))
+                    };
+                }
+
+                // General time adjustment
+                if (m.includes('提前') || m.includes('早一點')) {
+                    return {
+                        reply: `要把 Day ${targetDay} 所有行程提前多久？`,
+                        actions: [30, 60, 90].map(mins => ({
+                            label: `提前 ${mins} 分鐘`,
+                            fn: () => { this._shiftDayTimes(di, -mins); },
+                            confirmMsg: `Day ${targetDay} 所有行程已提前 ${mins} 分鐘！`
+                        }))
+                    };
+                }
+                if (m.includes('延後') || m.includes('晚一點') || m.includes('往後')) {
+                    return {
+                        reply: `要把 Day ${targetDay} 所有行程延後多久？`,
+                        actions: [30, 60, 90].map(mins => ({
+                            label: `延後 ${mins} 分鐘`,
+                            fn: () => { this._shiftDayTimes(di, mins); },
+                            confirmMsg: `Day ${targetDay} 所有行程已延後 ${mins} 分鐘！`
+                        }))
+                    };
+                }
+
+                // Default: show the day's items
+                return {
+                    reply: `Day ${targetDay} 目前的時間安排：\n${days[di].items.map(i => `${i.time} ${i.title}`).join('\n')}\n\n你可以說「提前」或「延後」來調整時間`,
+                    actions: []
+                };
+            }
+            return { reply: '請指定是第幾天的行程要調整時間，例如：「第一天提前30分鐘」', actions: [] };
+        }
+
+        // ===== SHOW DAY DETAIL =====
+        if (targetDay && (m.includes('看') || m.includes('顯示') || m.includes('查看') || m.includes('什麼') || m.includes('有什麼') || m.includes('行程'))) {
+            const di = targetDay - 1;
+            if (di < 0 || di >= days.length) return { reply: `沒有第 ${targetDay} 天的行程喔～`, actions: [] };
+            const day = days[di];
+            let detail = `Day ${targetDay} - ${day.title}\n${this.formatDate(day.date)} (${getDayName(day.date)})\n\n`;
+            day.items.forEach(item => {
+                const mealLabels = { breakfast: ' [早餐]', lunch: ' [午餐]', dinner: ' [晚餐]' };
+                detail += `${item.time}${item.mealType ? mealLabels[item.mealType] : ''} ${item.title}\n`;
+                if (item.desc) detail += `  ${item.desc}\n`;
+            });
+            return { reply: detail, actions: [] };
+        }
+
+        // ===== MOVE ITEM BETWEEN DAYS =====
+        if (m.includes('移到') || m.includes('搬到') || m.includes('移去') || m.includes('放到')) {
+            const nameMatch = this._findItemByName(msg, days);
+            const toDay = m.match(/第([一二三四五六七八九十\d]+)[天日]/g);
+            if (nameMatch && toDay && toDay.length >= 1) {
+                const numMap = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+                const lastDayRef = toDay[toDay.length - 1];
+                const toDayMatch = lastDayRef.match(/第([一二三四五六七八九十\d]+)/);
+                const toDayNum = toDayMatch ? (numMap[toDayMatch[1]] || parseInt(toDayMatch[1])) : null;
+                if (toDayNum && toDayNum >= 1 && toDayNum <= days.length) {
+                    const { dayIdx, itemIdx, item } = nameMatch;
+                    return {
+                        reply: `把「${item.title}」從 Day ${dayIdx + 1} 移到 Day ${toDayNum}？`,
+                        actions: [{
+                            label: '確認移動',
+                            fn: () => {
+                                const removed = days[dayIdx].items.splice(itemIdx, 1)[0];
+                                days[toDayNum - 1].items.push(removed);
+                                days[toDayNum - 1].items.sort((a, b) => a.time.localeCompare(b.time));
+                            },
+                            confirmMsg: `已將「${item.title}」移到 Day ${toDayNum}！`
+                        }]
+                    };
+                }
+            }
+            return { reply: '請說清楚要移動什麼到第幾天，例如：「把七星潭移到第二天」', actions: [] };
+        }
+
+        // ===== RECOMMEND =====
+        if (m.includes('推薦') || m.includes('建議') || m.includes('還有什麼')) {
+            const usedNames = new Set();
+            days.forEach(d => d.items.forEach(i => usedNames.add(i.title)));
+            const unusedAttr = data.attractions.filter(a => !usedNames.has(a.name)).sort((a, b) => b.rating - a.rating).slice(0, 3);
+            const unusedRest = data.restaurants.filter(r => !usedNames.has(r.name)).sort((a, b) => b.rating - a.rating).slice(0, 3);
+            let reply = '以下是還沒安排到的高評分景點和餐廳：\n\n';
+            if (unusedAttr.length) reply += '景點：\n' + unusedAttr.map(a => `  ${a.name} (${a.rating}★) - ${a.type}`).join('\n') + '\n\n';
+            if (unusedRest.length) reply += '餐廳：\n' + unusedRest.map(r => `  ${r.name} (${r.rating}★) ~NT$${r.price}`).join('\n');
+            if (!unusedAttr.length && !unusedRest.length) reply = '所有景點和餐廳都已經安排進行程了！';
+            return { reply, actions: [] };
+        }
+
+        // ===== FALLBACK =====
+        return {
+            reply: '我可以幫你做這些事情：\n\n' +
+                '• 總結行程 - 「幫我總結目前行程」\n' +
+                '• 刪除項目 - 「刪除第一天的午餐」\n' +
+                '• 替換項目 - 「把第二天的景點換掉」\n' +
+                '• 新增項目 - 「第三天加一個景點」\n' +
+                '• 調整時間 - 「第一天提前30分鐘」\n' +
+                '• 移動項目 - 「把七星潭移到第二天」\n' +
+                '• 查看行程 - 「第一天有什麼行程」\n' +
+                '• 推薦 - 「還有什麼好玩的」',
+            actions: []
+        };
+    }
+
+    _findItemByName(msg, days) {
+        // Find an itinerary item by partial name match
+        for (let di = 0; di < days.length; di++) {
+            for (let ii = 0; ii < days[di].items.length; ii++) {
+                const item = days[di].items[ii];
+                if (msg.includes(item.title) || (item.spotData && msg.includes(item.spotData.name))) {
+                    return { dayIdx: di, itemIdx: ii, item };
+                }
+            }
+        }
+        // Fuzzy match: check if any item title appears partially in msg
+        for (let di = 0; di < days.length; di++) {
+            for (let ii = 0; ii < days[di].items.length; ii++) {
+                const item = days[di].items[ii];
+                const title = item.title;
+                // Check if significant portion of title matches
+                if (title.length >= 3) {
+                    for (let len = title.length; len >= 2; len--) {
+                        for (let start = 0; start <= title.length - len; start++) {
+                            const sub = title.substring(start, start + len);
+                            if (sub.length >= 2 && msg.includes(sub)) return { dayIdx: di, itemIdx: ii, item };
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    _shiftDayTimes(dayIdx, minutes) {
+        const day = this.generatedItinerary.days[dayIdx];
+        if (!day) return;
+        day.items.forEach(item => {
+            const [h, m] = item.time.split(':').map(Number);
+            let total = h * 60 + m + minutes;
+            total = Math.max(0, Math.min(total, 23 * 60 + 59));
+            item.time = `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+        });
     }
 }
 
