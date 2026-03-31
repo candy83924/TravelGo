@@ -47,6 +47,7 @@ const DESTINATIONS_DB = {
                 reason: '全台最壯觀的大理岩峽谷，被國際旅遊雜誌評選為台灣必訪景點第一名。步道規劃完善，適合各種體力程度的遊客。',
                 userReview: '「峽谷景色真的令人震撼，尤其是九曲洞步道，走在其中有種被大自然包圍的感動。」— Google 評論精選',
                 tags: ['必訪', '免費', '戶外'], hasTicket: false,
+                bestTimeSlot: 'morning',
                 image: 'https://images.unsplash.com/photo-1590089415225-401ed6f9db8e?w=600&h=400&fit=crop',
             },
             {
@@ -58,6 +59,7 @@ const DESTINATIONS_DB = {
                 reason: '花蓮地標性海灘，獨特的鵝卵石海岸線全台獨有。清晨日出和傍晚夕陽都非常壯觀，是攝影愛好者的天堂。',
                 userReview: '「海水顏色美到不真實，從淺綠到深藍的漸層讓人看了就心曠神怡。」— 旅客心得',
                 tags: ['必訪', '免費', '海景', '日出'], hasTicket: false,
+                bestTimeSlot: 'afternoon',
                 image: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&h=400&fit=crop',
             },
             {
@@ -69,6 +71,7 @@ const DESTINATIONS_DB = {
                 reason: '入選台灣十景的絕美斷崖，垂直落差超過1000公尺。從崇德觀景台俯瞰，大理岩斷崖與太平洋交會的壯闊景象獨步全球。',
                 userReview: '「第一次看到時真的會倒吸一口氣，照片完全拍不出那種壯觀！」— Google 4.9星評論',
                 tags: ['必訪', '免費', '壯觀'], hasTicket: false,
+                bestTimeSlot: 'morning',
                 image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&h=400&fit=crop',
             },
             {
@@ -80,6 +83,7 @@ const DESTINATIONS_DB = {
                 reason: '全台最具原住民風味的夜市，可品嚐到石板烤肉、竹筒飯等獨特美食。佔地廣大，分為福町、大陸、自強、原住民等四大區域。',
                 userReview: '「原住民烤肉串超好吃，價格又便宜，一個人200元就能吃很飽！」— 美食部落客推薦',
                 tags: ['美食', '夜間', '熱鬧'], hasTicket: false,
+                bestTimeSlot: 'evening',
                 image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop',
             },
             {
@@ -92,6 +96,7 @@ const DESTINATIONS_DB = {
                 reason: '全台唯一臨海主題樂園，擁有8大主題區。海豚互動體驗是獨家亮點，小朋友可以近距離接觸海豚，是親子旅遊首選。',
                 userReview: '「海豚表演超精彩！小孩玩一整天都不膩，門票雖然不便宜但值得。」— 親子旅遊達人',
                 tags: ['親子', '門票', '樂園'], hasTicket: true,
+                bestTimeSlot: 'morning',
                 image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop',
             },
             {
@@ -103,6 +108,7 @@ const DESTINATIONS_DB = {
                 reason: '花東縱谷最受歡迎的免費景點。新鮮現擠鮮乳和手工乳酪蛋糕是招牌必買，牧場環境乾淨舒適，適合全家大小。',
                 userReview: '「鮮乳超濃超好喝，乳酪蛋糕也好吃到想外帶！免費景點CP值超高。」',
                 tags: ['免費', '親子', '體驗'], hasTicket: false,
+                bestTimeSlot: 'morning',
                 image: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=600&h=400&fit=crop',
             },
             {
@@ -114,6 +120,7 @@ const DESTINATIONS_DB = {
                 reason: '有「花蓮小歐洲」美譽的夢幻秘境。湛藍湖水搭配翠綠草地和棕櫚樹，隨手一拍都是明信片。12-1月落羽松變色時期更是美到令人窒息。',
                 userReview: '「真的像到了國外一樣！湖水清澈到可以看見魚在游泳。」',
                 tags: ['拍照', '免費', '夢幻'], hasTicket: false,
+                bestTimeSlot: 'afternoon',
                 image: 'https://images.unsplash.com/photo-1518173946687-a50d47f6fac9?w=600&h=400&fit=crop',
             },
             {
@@ -148,6 +155,7 @@ const DESTINATIONS_DB = {
                 reason: '日治時代酒廠建築完整保留，結合現代文創展覽。不定期舉辦手作市集和音樂表演，是雨天備案的好去處。',
                 userReview: '「建築很有味道，展覽也蠻有水準的，免費參觀很佛心。」',
                 tags: ['文創', '免費', '室內'], hasTicket: false,
+                bestTimeSlot: 'afternoon',
                 image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&h=400&fit=crop',
             },
             {
@@ -174,6 +182,7 @@ const DESTINATIONS_DB = {
                 userReview: '「每次來花蓮一定要來吃！一次買20顆不嫌多。」',
                 recommended: ['小籠包 $5/顆', '蒸餃 $5/顆', '酸辣湯 $30'],
                 tags: ['排隊名店', '早餐', '便宜'],
+                bestTimeSlot: 'breakfast',
                 image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&h=400&fit=crop',
             },
             {
@@ -186,6 +195,7 @@ const DESTINATIONS_DB = {
                 userReview: '「吃過這裡的扁食就回不去了，皮超Q餡超鮮！」',
                 recommended: ['鮮肉扁食 $80', '紅油抄手 $90'],
                 tags: ['老字號', '小吃'],
+                bestTimeSlot: 'lunch',
                 image: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=600&h=400&fit=crop',
             },
             {
@@ -198,6 +208,7 @@ const DESTINATIONS_DB = {
                 userReview: '「生魚片厚切又新鮮，在台北同品質至少要貴一倍！排隊也值得。」',
                 recommended: ['綜合生魚片 $350', '海膽握壽司 $120', '炙燒鮭魚 $80'],
                 tags: ['必吃', '海鮮', '排隊'],
+                bestTimeSlot: 'dinner',
                 image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=400&fit=crop',
             },
             {
@@ -210,6 +221,7 @@ const DESTINATIONS_DB = {
                 userReview: '「鵝肉鮮嫩到會流汁，搭配蒜蓉醬油超對味！小菜也很出色。」',
                 recommended: ['鵝肉（半隻）$450', '鵝肉飯 $60', '筍絲 $50'],
                 tags: ['人氣', '台式'],
+                bestTimeSlot: 'lunch',
                 image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop',
             },
             {
@@ -222,6 +234,7 @@ const DESTINATIONS_DB = {
                 userReview: '「排了30分鐘但完全值得！蛋液流出來的那瞬間超滿足。」',
                 recommended: ['加蛋蔥油餅 $35', '不加蛋 $25'],
                 tags: ['排隊名店', '銅板', '必吃'],
+                bestTimeSlot: 'breakfast',
                 image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&h=400&fit=crop',
             },
             {
@@ -235,6 +248,7 @@ const DESTINATIONS_DB = {
                 userReview: '「竹筒飯香氣十足，烤山豬肉外酥內嫩，很有部落風味！」',
                 recommended: ['竹筒飯 $80', '烤山豬肉 $300', '野菜火鍋 $450'],
                 tags: ['原住民', '特色', '體驗'],
+                bestTimeSlot: 'dinner',
                 image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
             },
             {
@@ -247,6 +261,7 @@ const DESTINATIONS_DB = {
                 userReview: '「蚵仔超大顆又新鮮，醬料酸甜剛好，每次來花蓮必吃！」',
                 recommended: ['蚵仔煎 $70', '生炒花枝 $120', '蝦仁煎 $80'],
                 tags: ['老字號', '海鮮', '小吃'],
+                bestTimeSlot: 'dinner',
                 image: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=600&h=400&fit=crop',
             },
             {
@@ -267,7 +282,7 @@ const DESTINATIONS_DB = {
         hotels: [
             {
                 id: 'h1', name: '太魯閣晶英酒店', type: '五星飯店', rating: 4.7, reviews: 5600,
-                lat: 24.1834, lng: 121.4939,
+                lat: 24.1834, lng: 121.4939, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣秀林鄉天祥路18號',
                 description: '位於太魯閣國家公園內的五星級飯店，坐擁峽谷絕景。',
                 amenities: ['泳池', 'SPA', '健身房', '餐廳', '停車場', '峽谷景觀'],
@@ -280,7 +295,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h2', name: '花蓮翰品酒店', type: '四星飯店', rating: 4.4, reviews: 8200,
-                lat: 23.9815, lng: 121.6085,
+                lat: 23.9815, lng: 121.6085, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市永興路2號',
                 description: '市區親子友善飯店，與幾米品牌聯名打造繽紛空間。',
                 amenities: ['泳池', '兒童遊戲室', '餐廳', '停車場', '自行車租借'],
@@ -293,7 +308,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h3', name: '承億文旅花蓮山知道', type: '設計旅店', rating: 4.3, reviews: 4100,
-                lat: 23.9736, lng: 121.6019,
+                lat: 23.9736, lng: 121.6019, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市國聯二路56號',
                 description: '文創風設計旅店，簡約清新，位置便利。',
                 amenities: ['餐廳', '洗衣房', '自行車租借', '市區位置'],
@@ -306,7 +321,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h4', name: '斯圖亞特海洋莊園', type: '民宿', rating: 4.6, reviews: 2800,
-                lat: 23.9120, lng: 121.5605,
+                lat: 23.9120, lng: 121.5605, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣壽豐鄉鹽寮村大坑57號',
                 description: '歐風城堡民宿，面海絕佳位置欣賞太平洋日出。',
                 amenities: ['海景', '花園', '早餐', '停車場', '拍照景點'],
@@ -319,7 +334,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h5', name: '力麗華美達安可酒店', type: '商務飯店', rating: 4.2, reviews: 6300,
-                lat: 23.9771, lng: 121.5991,
+                lat: 23.9771, lng: 121.5991, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市林森路33號',
                 description: '國際品牌，設施新穎，市中心位置交通便利。',
                 amenities: ['健身房', '餐廳', '停車場', '會議室'],
@@ -332,7 +347,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h6', name: '迴音谷森林民宿', type: '民宿', rating: 4.8, reviews: 1500,
-                lat: 23.9210, lng: 121.5180,
+                lat: 23.9210, lng: 121.5180, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣壽豐鄉池南村林園路65號',
                 description: '隱身山林秘境民宿，被森林環繞的獨棟木屋。',
                 amenities: ['森林', '星空觀景', '手作早餐', '停車場'],
@@ -345,7 +360,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h7', name: '花蓮背包客棧', type: '青年旅舍', rating: 4.0, reviews: 3200,
-                lat: 23.9760, lng: 121.6040,
+                lat: 23.9760, lng: 121.6040, checkIn: '14:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市國聯一路100號',
                 description: '平價背包客棧，位於市中心，交通便利，適合獨旅或預算有限的旅客。',
                 amenities: ['共用廚房', '洗衣機', 'WiFi', '置物櫃', '公共休息區'],
@@ -358,7 +373,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h8', name: '七星潭海景民宿', type: '海景民宿', rating: 4.5, reviews: 2100,
-                lat: 24.0350, lng: 121.6280,
+                lat: 24.0350, lng: 121.6280, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣新城鄉海岸路198號',
                 description: '坐落七星潭旁的絕美海景民宿，每間房皆可眺望太平洋，日出美景盡收眼底。',
                 amenities: ['海景陽台', '免費早餐', '停車場', '自行車租借', '觀景台'],
@@ -371,7 +386,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h9', name: '花蓮理想大地渡假飯店', type: '渡假村', rating: 4.6, reviews: 9500,
-                lat: 23.8920, lng: 121.5300,
+                lat: 23.8920, lng: 121.5300, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣壽豐鄉理想路1號',
                 description: '佔地250公頃的西班牙風格渡假村，擁有運河、泳池、高爾夫球場等豪華設施。',
                 amenities: ['運河遊船', '泳池', 'SPA', '高爾夫', '兒童遊戲區', '多間餐廳', '健身房'],
@@ -383,21 +398,8 @@ const DESTINATIONS_DB = {
                 ],
             },
             {
-                id: 'h10', name: '花蓮小旅行迷你旅店', type: '平價旅店', rating: 3.9, reviews: 1800,
-                lat: 23.9780, lng: 121.6020,
-                address: '花蓮縣花蓮市中山路301號',
-                description: '乾淨平價的市區小旅店，步行可達東大門夜市，適合想省住宿費的旅客。',
-                amenities: ['WiFi', '冷氣', '共用冰箱', '市區位置'],
-                image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&h=400&fit=crop',
-                prices: { agoda: 1200, booking: 1400, trip: 1300, trivago: 1100 },
-                roomTypes: [
-                    { name: '標準雙人房', prices: { agoda: 1200, booking: 1400, trip: 1300, trivago: 1100 } },
-                    { name: '經濟四人房', prices: { agoda: 1800, booking: 2000, trip: 1900, trivago: 1700 } },
-                ],
-            },
-            {
                 id: 'h11', name: '遠雄悅來大飯店', type: '五星飯店', rating: 4.4, reviews: 7800,
-                lat: 23.9020, lng: 121.5550,
+                lat: 23.9020, lng: 121.5550, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣壽豐鄉山嶺18號',
                 description: '坐落於海岸山脈上的五星級飯店，可俯瞰太平洋，毗鄰遠雄海洋公園。',
                 amenities: ['泳池', 'SPA', '健身房', '兒童遊戲室', '海景餐廳', '接駁車', '停車場'],
@@ -410,7 +412,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h12', name: '洄瀾窩青年旅舍', type: '青年旅舍', rating: 4.2, reviews: 2600,
-                lat: 23.9755, lng: 121.6055,
+                lat: 23.9755, lng: 121.6055, checkIn: '14:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市復興街57號',
                 description: '文青風格青年旅舍，定期舉辦旅行分享會與在地導覽活動，是結交旅伴的好地方。',
                 amenities: ['共用廚房', '交誼廳', '洗衣機', 'WiFi', '行李寄存', '旅遊諮詢'],
@@ -423,7 +425,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h13', name: '花蓮翰品酒店', type: '四星飯店', rating: 4.4, reviews: 7600,
-                lat: 23.9818, lng: 121.6080,
+                lat: 23.9818, lng: 121.6080, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市永興路2號',
                 description: '市區精緻四星飯店，與幾米品牌聯名合作，繽紛童趣的設計深受親子家庭喜愛。設施完善，地理位置優越。',
                 amenities: ['泳池', '兒童遊戲室', '餐廳', '停車場', 'WiFi', '自行車租借'],
@@ -436,7 +438,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h14', name: '成旅晶贊飯店花蓮假期', type: '商務飯店', rating: 4.2, reviews: 3800,
-                lat: 23.9740, lng: 121.6035,
+                lat: 23.9740, lng: 121.6035, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市中華路231號',
                 description: '位於花蓮市中心的商務飯店，鄰近東大門夜市，交通便利，客房乾淨舒適，是商務出差及自由行的理想選擇。',
                 amenities: ['WiFi', '餐廳', '停車場', '洗衣服務', '會議室'],
@@ -449,7 +451,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h15', name: '花蓮力麗哲園', type: '精品旅館', rating: 4.3, reviews: 2900,
-                lat: 23.9765, lng: 121.5995,
+                lat: 23.9765, lng: 121.5995, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市林森路180號',
                 description: '精品風格旅館，融合在地文化與現代設計，客房寬敞明亮。鄰近花蓮文創園區，步行可達市區各景點。',
                 amenities: ['WiFi', '早餐', '停車場', '自行車租借', '圖書閱覽室'],
@@ -462,7 +464,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h16', name: '藍天麗池飯店', type: '城市飯店', rating: 4.1, reviews: 4200,
-                lat: 23.9752, lng: 121.6048,
+                lat: 23.9752, lng: 121.6048, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市中正路590號',
                 description: '花蓮老字號城市飯店，地理位置絕佳，步行即達市中心商圈與東大門夜市。房間整潔，服務親切。',
                 amenities: ['WiFi', '餐廳', '停車場', '洗衣服務', '商務中心'],
@@ -475,7 +477,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h17', name: '花蓮福容大飯店', type: '五星飯店', rating: 4.6, reviews: 6100,
-                lat: 23.9690, lng: 121.6100,
+                lat: 23.9690, lng: 121.6100, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市民生路51號',
                 description: '花蓮市區頂級五星飯店，擁有完善的休閒設施與多間餐廳。頂樓無邊際泳池可眺望太平洋，是城市度假的首選。',
                 amenities: ['無邊際泳池', 'SPA', '健身房', '三溫暖', '餐廳', '停車場', '兒童遊戲區'],
@@ -488,7 +490,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h18', name: '麗翔酒店連鎖花蓮館', type: '溫泉飯店', rating: 4.3, reviews: 3400,
-                lat: 23.9560, lng: 121.5970,
+                lat: 23.9560, lng: 121.5970, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市中美路142號',
                 description: '擁有天然溫泉的休閒飯店，每間客房皆配有獨立溫泉浴池。結合日式湯屋文化與花蓮在地風情，是放鬆身心的好去處。',
                 amenities: ['客房溫泉', '露天風呂', '餐廳', '停車場', 'WiFi', 'SPA'],
@@ -501,7 +503,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h19', name: '煙波大飯店花蓮館', type: '度假飯店', rating: 4.5, reviews: 8900,
-                lat: 23.9700, lng: 121.6060,
+                lat: 23.9700, lng: 121.6060, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市中美路142號',
                 description: '花蓮知名度假飯店，擁有全花蓮最大的室內親水設施。兒童遊樂區設備豐富，是親子旅遊的熱門選擇。',
                 amenities: ['室內水樂園', '兒童遊戲區', '健身房', '餐廳', '停車場', 'WiFi', 'SPA'],
@@ -514,7 +516,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h20', name: '捷絲旅花蓮中正館', type: '文青旅店', rating: 4.2, reviews: 3100,
-                lat: 23.9730, lng: 121.6010,
+                lat: 23.9730, lng: 121.6010, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市中正路396號',
                 description: '晶華集團旗下文青風格旅店，設計簡約時尚。提供在地文化體驗活動，讓旅客深度感受花蓮之美。',
                 amenities: ['WiFi', '自行車租借', '早餐', '洗衣房', '閱讀空間'],
@@ -526,7 +528,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h21', name: '花蓮美侖大飯店', type: '五星飯店', rating: 4.4, reviews: 7200,
-                lat: 23.9850, lng: 121.6130,
+                lat: 23.9850, lng: 121.6130, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣花蓮市林園1-1號',
                 description: '花蓮歷史悠久的五星級飯店，佔地廣大，設施完善。擁有標準游泳池、網球場等運動設施，適合家庭及團體旅遊。',
                 amenities: ['泳池', '網球場', '健身房', 'SPA', '餐廳', '停車場', '兒童遊戲區', '商務中心'],
@@ -539,7 +541,7 @@ const DESTINATIONS_DB = {
             },
             {
                 id: 'h22', name: '瑞穗天合國際觀光酒店', type: '頂級度假村', rating: 4.7, reviews: 5400,
-                lat: 23.4975, lng: 121.3540,
+                lat: 23.4975, lng: 121.3540, checkIn: '15:00', checkOut: '11:00',
                 address: '花蓮縣瑞穗鄉溫泉路二段368號',
                 description: '全台最大歐風城堡度假村，佔地兩萬坪。擁有金色水樂園、溫泉、高爾夫推桿場等頂級設施，宛如置身歐洲小鎮。',
                 amenities: ['金色水樂園', '溫泉', 'SPA', '高爾夫', '兒童超跑', '多間餐廳', '健身房', '停車場'],
@@ -678,6 +680,82 @@ const DEPARTURE_ROUTES = {
     hualien: [
       { type: 'train', name: '台鐵自強號', route: '新竹 → 花蓮', price: 420, duration: '3小時20分', departure: '新竹車站', arrival: '花蓮車站' },
       { type: 'car', name: '自駕', route: '新竹 → 花蓮', price: 900, duration: '約3.5小時', departure: '新竹', arrival: '花蓮' },
+    ]
+  }},
+  keelung: { name: '基隆', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '基隆 → 花蓮', price: 380, duration: '約2小時', departure: '基隆車站', arrival: '花蓮車站' },
+      { type: 'bus', name: '客運巴士', route: '基隆 → 花蓮', price: 270, duration: '約3小時', departure: '基隆轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '基隆 → 花蓮', price: 700, duration: '約2.5小時', departure: '基隆', arrival: '花蓮' },
+    ]
+  }},
+  miaoli: { name: '苗栗', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '苗栗 → 花蓮', price: 480, duration: '約3小時30分', departure: '苗栗車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '苗栗 → 花蓮', price: 1000, duration: '約4小時', departure: '苗栗', arrival: '花蓮' },
+    ]
+  }},
+  changhua: { name: '彰化', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '彰化 → 花蓮', price: 560, duration: '約4小時30分', departure: '彰化車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '彰化 → 花蓮', price: 1100, duration: '約4.5小時', departure: '彰化', arrival: '花蓮' },
+    ]
+  }},
+  nantou: { name: '南投', transports: {
+    hualien: [
+      { type: 'bus', name: '客運巴士', route: '南投 → 花蓮', price: 500, duration: '約5小時', departure: '南投轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '南投 → 花蓮', price: 1000, duration: '約4小時', departure: '南投', arrival: '花蓮' },
+    ]
+  }},
+  yunlin: { name: '雲林', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '雲林 → 花蓮', price: 600, duration: '約5小時', departure: '斗六車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '雲林 → 花蓮', price: 1200, duration: '約5小時', departure: '雲林', arrival: '花蓮' },
+    ]
+  }},
+  chiayi: { name: '嘉義', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '嘉義 → 花蓮', price: 640, duration: '約5小時30分', departure: '嘉義車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '嘉義 → 花蓮', price: 1300, duration: '約5小時', departure: '嘉義', arrival: '花蓮' },
+    ]
+  }},
+  pingtung: { name: '屏東', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '屏東 → 花蓮', price: 820, duration: '約6小時', departure: '屏東車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '屏東 → 花蓮', price: 1600, duration: '約6小時', departure: '屏東', arrival: '花蓮' },
+    ]
+  }},
+  yilan: { name: '宜蘭', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '宜蘭 → 花蓮', price: 200, duration: '約1小時30分', departure: '宜蘭車站', arrival: '花蓮車站' },
+      { type: 'bus', name: '客運巴士', route: '宜蘭 → 花蓮', price: 180, duration: '約2小時', departure: '宜蘭轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '宜蘭 → 花蓮', price: 400, duration: '約1.5小時', departure: '宜蘭', arrival: '花蓮' },
+    ]
+  }},
+  taitung: { name: '台東', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '台東 → 花蓮', price: 340, duration: '約2小時30分', departure: '台東車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '台東 → 花蓮', price: 600, duration: '約3小時', departure: '台東', arrival: '花蓮' },
+    ]
+  }},
+  penghu: { name: '澎湖', transports: {
+    hualien: [
+      { type: 'plane', name: '飛機轉乘', route: '澎湖 → 台北 → 花蓮', price: 3000, duration: '約4小時（含轉乘）', departure: '澎湖馬公機場', arrival: '花蓮車站' },
+    ]
+  }},
+  kinmen: { name: '金門', transports: {
+    hualien: [
+      { type: 'plane', name: '飛機轉乘', route: '金門 → 台北 → 花蓮', price: 4000, duration: '約4.5小時（含轉乘）', departure: '金門尚義機場', arrival: '花蓮車站' },
+    ]
+  }},
+  matsu: { name: '馬祖', transports: {
+    hualien: [
+      { type: 'plane', name: '飛機轉乘', route: '馬祖 → 台北 → 花蓮', price: 4500, duration: '約5小時（含轉乘）', departure: '馬祖南竿機場', arrival: '花蓮車站' },
+    ]
+  }},
+  hualien: { name: '花蓮', transports: {
+    hualien: [
+      { type: 'car', name: '當地出發', route: '花蓮市區', price: 0, duration: '0分鐘', departure: '花蓮', arrival: '花蓮' },
     ]
   }},
 };

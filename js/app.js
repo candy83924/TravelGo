@@ -127,6 +127,8 @@ class TravelApp {
         this.preferences = { rating: 4.0, mealBudget: 500, includeTicket: true, includeFree: true };
         this.attractionsPerDay = 3;
         this.mealBudgets = { breakfast: 150, lunch: 300, dinner: 500 };
+        this.dailyStartTime = '09:00';
+        this.dailyEndTime = '21:00';
         this.init();
     }
 
@@ -553,10 +555,23 @@ class TravelApp {
         document.getElementById('btn-export-pdf').addEventListener('click', () => this.exportPDF());
         document.getElementById('modal-close').addEventListener('click', () => this.closeModal('detail-modal'));
         document.getElementById('edit-modal-close').addEventListener('click', () => this.closeModal('edit-modal'));
-        document.getElementById('departure-city')?.addEventListener('change', (e) => {
-            this.departureCity = e.target.value;
-            this.renderTransportOptions();
-        });
+        const depInput = document.getElementById('departure-city-input');
+        if (depInput) {
+            depInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const matchKey = Object.keys(DEPARTURE_ROUTES).find(k => DEPARTURE_ROUTES[k].name === val);
+                if (matchKey) {
+                    this.departureCity = matchKey;
+                    this.renderTransportOptions();
+                } else if (val.trim()) {
+                    this.departureCity = 'custom';
+                    this.customDepartureName = val.trim();
+                    this.renderTransportOptions();
+                }
+            });
+        }
+        document.getElementById('daily-start-time')?.addEventListener('change', (e) => { this.dailyStartTime = e.target.value; });
+        document.getElementById('daily-end-time')?.addEventListener('change', (e) => { this.dailyEndTime = e.target.value; });
         document.getElementById('detail-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeModal('detail-modal'); });
         document.getElementById('edit-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeModal('edit-modal'); });
         document.getElementById('yt-player-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeYTPlayer(); });
@@ -604,6 +619,38 @@ class TravelApp {
         const data = getDestData(this.selectedCity);
         const hotel = this.selectedHotel;
 
+        // Helper functions for time math
+        function timeToMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+        function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+
+        // Time slot definitions
+        const TIME_SLOTS = {
+            breakfast: { start: 420, end: 540 },   // 07:00-09:00
+            morning:   { start: 480, end: 660 },    // 08:00-11:00
+            lunch:     { start: 690, end: 780 },     // 11:30-13:00
+            afternoon: { start: 780, end: 1020 },    // 13:00-17:00
+            dinner:    { start: 1050, end: 1170 },   // 17:30-19:30
+            evening:   { start: 1080, end: 1260 },   // 18:00-21:00
+        };
+
+        const startMin = timeToMin(this.dailyStartTime);
+        const endMin = timeToMin(this.dailyEndTime);
+
+        // Check if attraction is a night market
+        function isNightMarket(item) {
+            if (!item) return false;
+            const name = item.name || '';
+            return name.includes('夜市') || item.type === '夜市';
+        }
+
+        // Determine best time slot for an item
+        function getBestSlot(item) {
+            if (!item) return null;
+            if (item.bestTimeSlot) return item.bestTimeSlot;
+            if (isNightMarket(item)) return 'evening';
+            return null;
+        }
+
         let attractions = data.attractions.filter(a => {
             if (a.rating < this.preferences.rating) return false;
             if (!this.preferences.includeTicket && a.hasTicket) return false;
@@ -625,6 +672,11 @@ class TravelApp {
         const lunchRestaurants = restaurants.filter(r => r.price <= this.mealBudgets.lunch);
         const dinnerRestaurants = restaurants.filter(r => r.price <= this.mealBudgets.dinner);
 
+        // Also separate restaurants by bestTimeSlot
+        const breakfastSlotRestaurants = restaurants.filter(r => getBestSlot(r) === 'breakfast');
+        const lunchSlotRestaurants = restaurants.filter(r => getBestSlot(r) === 'lunch');
+        const dinnerSlotRestaurants = restaurants.filter(r => getBestSlot(r) === 'dinner');
+
         const days = [];
         const usedA = new Set(), usedR = new Set();
 
@@ -632,44 +684,170 @@ class TravelApp {
             const date = new Date(this.startDate); date.setDate(date.getDate() + d);
             const items = [], spots = [];
             const isFirst = d === 0, isLast = d === this.selectedDays - 1;
+            let currentMin = startMin; // Track current time position
 
+            // === FIRST DAY: Transport + Arrival ===
             if (isFirst) {
                 const depRoutes = DEPARTURE_ROUTES[this.departureCity]?.transports[this.selectedCity];
                 const tr = depRoutes?.find(t => t.type === this.selectedTransport) || data.transport?.find(t => t.type === this.selectedTransport);
-                items.push({ time: '09:00', title: `搭乘${tr?.name || '交通工具'}前往${data.name}`, type: 'transport', desc: tr ? `${tr.route} ${tr.duration} · NT$${tr.price}/人` : '' });
-                items.push({ time: '11:30', title: `抵達${data.name}`, type: 'transport', desc: '前往住宿放行李' });
-            }
-            if (!isFirst) {
-                // Breakfast
-                const breakfastR = this.pickMealRestaurant(breakfastRestaurants, restaurants, usedR, date);
-                if (breakfastR) {
-                    items.push({ time: '07:30', title: breakfastR.name, type: 'meal', mealType: 'breakfast', desc: `${breakfastR.recommended?.[0] || ''} ~NT$${breakfastR.price}/人`, spotData: breakfastR });
-                    spots.push(breakfastR);
-                } else {
-                    items.push({ time: '07:30', title: '飯店早餐', type: 'meal', mealType: 'breakfast', desc: hotel.name });
+                const departureTime = minToTime(startMin);
+                items.push({ time: departureTime, title: `搭乘${tr?.name || '交通工具'}前往${data.name}`, type: 'transport', desc: tr ? `${tr.route} ${tr.duration} · NT$${tr.price}/人` : '' });
+
+                // Estimate arrival time based on transport duration
+                let travelMinutes = 150; // default 2.5 hours
+                if (tr?.duration) {
+                    const durMatch = tr.duration.match(/(\d+)/);
+                    if (durMatch) {
+                        const hours = parseFloat(durMatch[1]);
+                        travelMinutes = Math.round(hours * 60);
+                        // Handle "X小時Y分" format
+                        const minMatch = tr.duration.match(/(\d+)\s*分/);
+                        if (minMatch) travelMinutes = Math.round(hours * 60) + parseInt(minMatch[1]);
+                    }
                 }
+                const arrivalMin = startMin + travelMinutes;
+                const arrivalTime = minToTime(Math.min(arrivalMin, endMin));
+
+                const checkInTime = hotel?.checkIn || '15:00';
+                const checkInMin = timeToMin(checkInTime);
+                let arrivalDesc = `前往 ${hotel?.name || '飯店'} 放行李（Check-in ${checkInTime}）`;
+                if (arrivalMin < checkInMin) {
+                    arrivalDesc = `前往 ${hotel?.name || '飯店'} 放行李（Check-in ${checkInTime}，可先寄放行李）`;
+                }
+                items.push({ time: arrivalTime, title: `抵達${data.name}`, type: 'transport', desc: arrivalDesc });
+                currentMin = arrivalMin + 30; // 30 min to settle in
             }
 
+            // === NON-FIRST DAY: Breakfast ===
+            if (!isFirst) {
+                // Try breakfast-slot restaurants first, then budget-based
+                const breakfastR = this.pickMealRestaurant(breakfastSlotRestaurants, breakfastRestaurants, usedR, date)
+                    || this.pickMealRestaurant(breakfastRestaurants, restaurants, usedR, date);
+                const breakfastTime = Math.max(currentMin, TIME_SLOTS.breakfast.start);
+                if (breakfastR) {
+                    items.push({ time: minToTime(breakfastTime), title: breakfastR.name, type: 'meal', mealType: 'breakfast', desc: `${breakfastR.recommended?.[0] || ''} ~NT$${breakfastR.price}/人`, spotData: breakfastR });
+                    spots.push(breakfastR);
+                } else {
+                    items.push({ time: minToTime(breakfastTime), title: '飯店早餐', type: 'meal', mealType: 'breakfast', desc: hotel.name });
+                }
+                currentMin = breakfastTime + 50; // 50 min for breakfast
+            }
+
+            // === Collect daily attractions ===
             const dailyCount = isFirst || isLast ? Math.max(1, this.attractionsPerDay - 1) : this.attractionsPerDay;
+            const dayAttractions = [];
             let added = 0;
             for (const attr of attractions) {
                 if (added >= dailyCount || usedA.has(attr.id)) continue;
+                if (!isOpenOnDate(attr, date)) { usedA.add(attr.id); continue; }
                 usedA.add(attr.id);
-                if (!isOpenOnDate(attr, date)) continue;
-                const h = isFirst ? 13 + added * 2 : 9 + added * 2.5;
-                items.push({ time: `${String(Math.floor(h)).padStart(2,'0')}:${String(Math.round((h%1)*60)).padStart(2,'0')}`, title: attr.name, type: 'attraction', desc: attr.description.substring(0, 50) + '...', spotData: attr, isOpen: true });
-                spots.push(attr); added++;
+                dayAttractions.push(attr);
+                added++;
             }
 
-            // Lunch
-            const lunch = this.pickMealRestaurant(lunchRestaurants, restaurants, usedR, date);
-            if (lunch) { items.push({ time: isFirst ? '12:00' : '12:30', title: lunch.name, type: 'meal', mealType: 'lunch', desc: `${lunch.recommended?.[0] || ''} ~NT$${lunch.price}/人`, spotData: lunch }); spots.push(lunch); }
+            // Separate attractions by time slot
+            const morningAttrs = dayAttractions.filter(a => getBestSlot(a) === 'morning');
+            const afternoonAttrs = dayAttractions.filter(a => getBestSlot(a) === 'afternoon');
+            const eveningAttrs = dayAttractions.filter(a => getBestSlot(a) === 'evening' || isNightMarket(a));
+            const unslottedAttrs = dayAttractions.filter(a => !getBestSlot(a) && !isNightMarket(a));
 
-            // Dinner
-            const dinner = this.pickMealRestaurant(dinnerRestaurants, restaurants, usedR, date);
-            if (dinner) { items.push({ time: '18:30', title: dinner.name, type: 'meal', mealType: 'dinner', desc: `${dinner.recommended?.[0] || ''} ~NT$${dinner.price}/人`, spotData: dinner }); spots.push(dinner); }
+            // Distribute unslotted attractions to fill morning/afternoon
+            const morningSlots = morningAttrs.length;
+            const afternoonSlots = afternoonAttrs.length;
+            for (const attr of unslottedAttrs) {
+                if (morningAttrs.length <= afternoonAttrs.length) {
+                    morningAttrs.push(attr);
+                } else {
+                    afternoonAttrs.push(attr);
+                }
+            }
 
-            if (isFirst) items.push({ time: '17:00', title: `${hotel.name} Check-in`, type: 'hotel', desc: hotel.type });
+            // === Schedule morning attractions ===
+            const morningStartMin = isFirst ? currentMin : Math.max(currentMin, TIME_SLOTS.morning.start);
+            let morningCurrent = morningStartMin;
+            for (const attr of morningAttrs) {
+                if (morningCurrent + 20 > endMin) break; // Don't go past daily end
+                const schedTime = Math.max(morningCurrent, TIME_SLOTS.morning.start);
+                items.push({
+                    time: minToTime(schedTime),
+                    title: attr.name,
+                    type: 'attraction',
+                    desc: attr.description ? attr.description.substring(0, 50) + '...' : '',
+                    spotData: attr,
+                    isOpen: true
+                });
+                spots.push(attr);
+                morningCurrent = schedTime + 110; // ~1.5-2 hours + 20 min travel
+            }
+            currentMin = Math.max(currentMin, morningCurrent);
+
+            // === Lunch ===
+            const lunchTime = Math.max(currentMin, TIME_SLOTS.lunch.start);
+            const lunch = this.pickMealRestaurant(lunchSlotRestaurants, lunchRestaurants, usedR, date)
+                || this.pickMealRestaurant(lunchRestaurants, restaurants, usedR, date);
+            if (lunch) {
+                items.push({ time: minToTime(lunchTime), title: lunch.name, type: 'meal', mealType: 'lunch', desc: `${lunch.recommended?.[0] || ''} ~NT$${lunch.price}/人`, spotData: lunch });
+                spots.push(lunch);
+            }
+            currentMin = lunchTime + 60; // 1 hour for lunch
+
+            // === Schedule afternoon attractions ===
+            let afternoonCurrent = Math.max(currentMin, TIME_SLOTS.afternoon.start);
+            for (const attr of afternoonAttrs) {
+                if (afternoonCurrent + 20 > endMin) break;
+                items.push({
+                    time: minToTime(afternoonCurrent),
+                    title: attr.name,
+                    type: 'attraction',
+                    desc: attr.description ? attr.description.substring(0, 50) + '...' : '',
+                    spotData: attr,
+                    isOpen: true
+                });
+                spots.push(attr);
+                afternoonCurrent += 110; // ~1.5-2 hours + 20 min travel
+            }
+            currentMin = Math.max(currentMin, afternoonCurrent);
+
+            // === First day: Hotel check-in ===
+            if (isFirst) {
+                const checkInTime = hotel?.checkIn || '15:00';
+                const checkInMin = timeToMin(checkInTime);
+                const actualCheckIn = Math.max(currentMin, checkInMin);
+                items.push({ time: minToTime(actualCheckIn), title: `${hotel.name} Check-in`, type: 'hotel', desc: hotel.type });
+                currentMin = Math.max(currentMin, actualCheckIn + 30);
+            }
+
+            // === Dinner ===
+            const dinnerTime = Math.max(currentMin, TIME_SLOTS.dinner.start);
+            if (dinnerTime < endMin) {
+                const dinner = this.pickMealRestaurant(dinnerSlotRestaurants, dinnerRestaurants, usedR, date)
+                    || this.pickMealRestaurant(dinnerRestaurants, restaurants, usedR, date);
+                if (dinner) {
+                    items.push({ time: minToTime(dinnerTime), title: dinner.name, type: 'meal', mealType: 'dinner', desc: `${dinner.recommended?.[0] || ''} ~NT$${dinner.price}/人`, spotData: dinner });
+                    spots.push(dinner);
+                }
+                currentMin = dinnerTime + 60;
+            }
+
+            // === Schedule evening attractions (night markets etc.) - MUST be 18:00+ ===
+            let eveningCurrent = Math.max(currentMin, TIME_SLOTS.evening.start);
+            for (const attr of eveningAttrs) {
+                if (eveningCurrent + 20 > endMin) break;
+                // Night markets MUST be 18:00+
+                const minStart = isNightMarket(attr) ? Math.max(eveningCurrent, 1080) : eveningCurrent;
+                items.push({
+                    time: minToTime(minStart),
+                    title: attr.name,
+                    type: 'attraction',
+                    desc: attr.description ? attr.description.substring(0, 50) + '...' : '',
+                    spotData: attr,
+                    isOpen: true
+                });
+                spots.push(attr);
+                eveningCurrent = minStart + 90; // ~1.5 hours for evening activities
+            }
+
+            // === Last day: Checkout + Return transport ===
             if (isLast) {
                 items.push({ time: '08:30', title: '退房整理行李', type: 'hotel', desc: '' });
                 const depRoutes = DEPARTURE_ROUTES[this.departureCity]?.transports[this.selectedCity];
@@ -783,7 +961,7 @@ class TravelApp {
     renderItinerary() {
         const c = document.getElementById('tab-itinerary');
         if (!this.generatedItinerary) { c.innerHTML = '<div class="itinerary-empty"><i class="fas fa-route"></i><h3>尚未產生行程</h3></div>'; return; }
-        c.innerHTML = this.generatedItinerary.days.map(day => `
+        c.innerHTML = this.generatedItinerary.days.map((day, dayIndex) => `
             <div class="day-section ${this.editMode ? 'edit-mode' : ''}">
                 <div class="day-header">
                     <div class="day-number">${day.day}</div>
@@ -792,13 +970,18 @@ class TravelApp {
                     ${day.totalDistance ? `<div class="day-distance"><i class="fas fa-road"></i> ~${day.totalDistance}km</div>` : ''}
                 </div>
                 <div class="timeline">
-                    ${day.items.map((item, idx) => this.renderTimelineItem(item, day.day, idx, day.date)).join('')}
+                    ${day.items.map((item, idx) => this.renderTimelineItem(item, day.day, idx, day.date, dayIndex)).join('')}
                 </div>
-                ${this.editMode ? `<button class="btn-outline-sm" style="margin-top:0.5rem" onclick="app.addItemToDay(${day.day})"><i class="fas fa-plus"></i> 新增項目</button>` : ''}
+                <button class="add-item-btn" onclick="app.showAddItemModal(${dayIndex})" style="margin-top:0.5rem;width:100%;padding:0.5rem;border:2px dashed var(--border-solid);background:transparent;color:var(--text-secondary);border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;transition:all 0.2s">
+                    <i class="fas fa-plus"></i> 新增行程項目
+                </button>
+                ${this.editMode ? `<button class="btn-outline-sm" style="margin-top:0.5rem" onclick="app.addItemToDay(${day.day})"><i class="fas fa-plus"></i> 新增項目（編輯模式）</button>` : ''}
             </div>`).join('');
+        this.setupDragDrop();
     }
 
-    renderTimelineItem(item, dayNum, idx, date) {
+    renderTimelineItem(item, dayNum, idx, date, dayIndex) {
+        const di = typeof dayIndex === 'number' ? dayIndex : (dayNum - 1);
         let warn = '';
         if (item.spotData && !isOpenOnDate(item.spotData, date))
             warn = `<div class="timeline-warning"><i class="fas fa-exclamation-triangle"></i> 此日為公休日 ${item.spotData.closedDays||''}</div>`;
@@ -809,13 +992,16 @@ class TravelApp {
             mealBadge = `<span class="meal-type-badge ${item.mealType}">${mealLabels[item.mealType]}</span>`;
         }
 
-        return `<div class="timeline-item ${item.type} ${warn ? 'closed' : ''}">
-            <div class="timeline-time">${item.time}</div>
+        return `<div class="timeline-item ${item.type} ${warn ? 'closed' : ''}" draggable="true" data-day="${di}" data-item="${idx}">
+            <div class="timeline-time">
+                <input type="time" class="time-edit-input" value="${item.time}" onchange="app.updateItemTime(${di}, ${idx}, this.value)" style="border:none;background:transparent;font-size:inherit;font-weight:inherit;color:inherit;padding:0;width:5em;cursor:pointer">
+            </div>
             <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.spotData?.name || item.title)}+${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
             ${item.desc ? `<div class="timeline-desc">${item.desc}</div>` : ''}${warn}
             <div class="timeline-actions">
                 <button class="btn-edit-item" onclick="app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i> 編輯</button>
                 <button class="btn-delete-item" onclick="app.deleteItem(${dayNum},${idx})"><i class="fas fa-trash"></i> 刪除</button>
+                <button class="delete-item-btn" onclick="app.removeItem(${di}, ${idx})" title="移除" style="background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:0.2rem 0.5rem;cursor:pointer;font-size:0.75rem"><i class="fas fa-times"></i></button>
                 ${item.spotData ? `<button class="btn-edit-item" onclick="app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i> 地圖</button>` : ''}
             </div></div>`;
     }
@@ -1084,6 +1270,188 @@ class TravelApp {
             console.error('showDetail error:', e);
             this.showToast('載入詳情發生錯誤');
         }
+    }
+
+    // ===== Drag & Drop =====
+    setupDragDrop() {
+        const items = document.querySelectorAll('.timeline-item[draggable]');
+        let dragSrc = null;
+        const self = this;
+
+        items.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                dragSrc = item;
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    day: parseInt(item.dataset.day),
+                    item: parseInt(item.dataset.item)
+                }));
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                item.classList.add('drag-over');
+            });
+
+            item.addEventListener('dragleave', () => {
+                item.classList.remove('drag-over');
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                item.classList.remove('drag-over');
+                try {
+                    const src = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    const dst = { day: parseInt(item.dataset.day), item: parseInt(item.dataset.item) };
+
+                    const srcDay = self.generatedItinerary.days[src.day];
+                    const dstDay = self.generatedItinerary.days[dst.day];
+                    if (srcDay && dstDay && srcDay.items[src.item] && dstDay.items[dst.item]) {
+                        const srcItem = srcDay.items[src.item];
+                        const dstItem = dstDay.items[dst.item];
+                        // Swap times
+                        const tmpTime = srcItem.time;
+                        srcItem.time = dstItem.time;
+                        dstItem.time = tmpTime;
+                        // Swap positions
+                        srcDay.items[src.item] = dstItem;
+                        dstDay.items[dst.item] = srcItem;
+                        // Re-render
+                        self.renderItinerary();
+                        hapticFeedback('medium');
+                    }
+                } catch (err) {
+                    console.error('Drag drop error:', err);
+                }
+            });
+        });
+    }
+
+    // ===== Inline Time Editing =====
+    updateItemTime(dayIdx, itemIdx, newTime) {
+        if (this.generatedItinerary?.days[dayIdx]?.items[itemIdx]) {
+            this.generatedItinerary.days[dayIdx].items[itemIdx].time = newTime;
+            hapticFeedback('light');
+        }
+    }
+
+    // ===== Remove Item (quick delete) =====
+    removeItem(dayIdx, itemIdx) {
+        if (this.generatedItinerary?.days[dayIdx]) {
+            this.generatedItinerary.days[dayIdx].items.splice(itemIdx, 1);
+            this.renderItinerary();
+            hapticFeedback('light');
+        }
+    }
+
+    // ===== Add Item Modal =====
+    showAddItemModal(dayIdx) {
+        const data = getDestData(this.selectedCity);
+        const existingTitles = new Set();
+        this.generatedItinerary.days.forEach(d => d.items.forEach(i => existingTitles.add(i.title)));
+
+        const availableAttractions = data.attractions.filter(a => !existingTitles.has(a.name));
+        const availableRestaurants = data.restaurants.filter(r => !existingTitles.has(r.name));
+
+        const modal = document.getElementById('detail-modal');
+        modal.classList.remove('hidden');
+        modal.querySelector('.modal-body').innerHTML = `
+            <h3 style="margin-bottom:1rem"><i class="fas fa-plus-circle"></i> 新增行程項目</h3>
+            <div style="margin-bottom:1rem">
+                <label class="form-label" style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">時間</label>
+                <input type="time" id="new-item-time" class="input-field" value="12:00">
+            </div>
+            <div style="margin-bottom:1rem">
+                <label class="form-label" style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">類型</label>
+                <select id="new-item-type" class="input-field" onchange="app.toggleAddItemType()">
+                    <option value="attraction">景點</option>
+                    <option value="meal">餐廳</option>
+                    <option value="custom">自訂</option>
+                </select>
+            </div>
+            <div id="add-item-preset" style="margin-bottom:1rem">
+                <label class="form-label" style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">選擇</label>
+                <select id="new-item-select" class="input-field">
+                    ${availableAttractions.map(a => `<option value="${sanitizeHTML(a.name)}" data-type="attraction">${a.name} (${a.type})</option>`).join('')}
+                </select>
+            </div>
+            <div id="add-item-custom" style="display:none;margin-bottom:1rem">
+                <label class="form-label" style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">標題</label>
+                <input type="text" id="new-item-title" class="input-field" placeholder="輸入活動名稱">
+                <label class="form-label" style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">說明</label>
+                <input type="text" id="new-item-desc" class="input-field" placeholder="簡短說明（選填）">
+            </div>
+            <button class="btn-primary" onclick="app.confirmAddItem(${dayIdx})" style="width:100%;border:none;padding:0.7rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.9rem">
+                <i class="fas fa-check"></i> 加入行程
+            </button>
+        `;
+    }
+
+    toggleAddItemType() {
+        const type = document.getElementById('new-item-type').value;
+        const presetDiv = document.getElementById('add-item-preset');
+        const customDiv = document.getElementById('add-item-custom');
+        const select = document.getElementById('new-item-select');
+
+        if (type === 'custom') {
+            presetDiv.style.display = 'none';
+            customDiv.style.display = 'block';
+        } else {
+            presetDiv.style.display = 'block';
+            customDiv.style.display = 'none';
+            const data = getDestData(this.selectedCity);
+            const existingTitles = new Set();
+            this.generatedItinerary.days.forEach(d => d.items.forEach(i => existingTitles.add(i.title)));
+
+            const items = type === 'attraction'
+                ? data.attractions.filter(a => !existingTitles.has(a.name))
+                : data.restaurants.filter(r => !existingTitles.has(r.name));
+
+            select.innerHTML = items.map(i => `<option value="${sanitizeHTML(i.name)}">${i.name} ${i.type ? '('+i.type+')' : ''}</option>`).join('');
+        }
+    }
+
+    confirmAddItem(dayIdx) {
+        const time = document.getElementById('new-item-time')?.value;
+        const type = document.getElementById('new-item-type')?.value;
+        if (!time) { this.showToast('請選擇時間'); return; }
+        let newItem;
+
+        if (type === 'custom') {
+            const title = document.getElementById('new-item-title')?.value?.trim();
+            if (!title) { this.showToast('請輸入活動名稱'); return; }
+            newItem = { time, title: sanitizeHTML(title), desc: sanitizeHTML(document.getElementById('new-item-desc')?.value || ''), type: 'custom', cost: 0 };
+        } else {
+            const name = document.getElementById('new-item-select')?.value;
+            const data = getDestData(this.selectedCity);
+            const source = type === 'attraction' ? data.attractions : data.restaurants;
+            const item = source.find(s => s.name === name);
+            if (!item) { this.showToast('請選擇一個項目'); return; }
+            newItem = {
+                time,
+                title: item.name,
+                type: type === 'attraction' ? 'attraction' : 'meal',
+                desc: item.description || item.type || '',
+                spotData: item,
+                cost: item.price || item.fee || item.ticket || 0
+            };
+        }
+
+        if (!this.generatedItinerary?.days[dayIdx]) { this.showToast('無效的日期'); return; }
+        this.generatedItinerary.days[dayIdx].items.push(newItem);
+        // Sort by time
+        this.generatedItinerary.days[dayIdx].items.sort((a, b) => a.time.localeCompare(b.time));
+        this.closeModal('detail-modal');
+        this.renderItinerary();
+        hapticFeedback('success');
+        this.showToast('已新增行程項目');
     }
 
     closeModal(id) { document.getElementById(id).classList.add('hidden'); }

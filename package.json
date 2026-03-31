@@ -1,0 +1,26 @@
+{
+  "name": "travelgo",
+  "version": "1.0.0",
+  "description": "TravelGo - 智慧旅遊規劃 App",
+  "main": "index.html",
+  "scripts": {
+    "build": "node -e \"const fs=require('fs');const path=require('path');function copyDir(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=path.join(s,f),dp=path.join(d,f);if(fs.statSync(sp).isDirectory()){if(!['node_modules','ios','www','.git'].includes(f))copyDir(sp,dp)}else{fs.copyFileSync(sp,dp)}}}['index.html','manifest.json','sw.js'].forEach(f=>{if(fs.existsSync(f))fs.copyFileSync(f,'www/'+f)});['css','js','icons'].forEach(d=>{if(fs.existsSync(d))copyDir(d,'www/'+d)});console.log('Build: copied to www/')\"",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "keywords": [
+    "travel",
+    "taiwan",
+    "capacitor",
+    "ios"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0"
+  },
+  "dependencies": {
+    "@capacitor/ios": "^8.3.0"
+  }
+}

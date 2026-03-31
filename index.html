@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=9">
+    <link rel="stylesheet" href="css/style.css?v=10">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kosugi+Maru&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <!-- Leaflet Map -->
@@ -163,6 +163,20 @@
                             <span class="days-label" id="attr-label">個景點/天</span>
                         </div>
                     </div>
+                    <div class="form-group" style="margin-bottom:1rem">
+                        <label class="form-label"><i class="fas fa-clock"></i> 每日行程時間</label>
+                        <div style="display:flex;gap:0.75rem;align-items:center">
+                            <div style="flex:1">
+                                <label style="font-size:0.75rem;color:var(--text-secondary)">出發時間</label>
+                                <input type="time" id="daily-start-time" class="input-field" value="09:00">
+                            </div>
+                            <span style="color:var(--text-secondary);margin-top:1rem">～</span>
+                            <div style="flex:1">
+                                <label style="font-size:0.75rem;color:var(--text-secondary)">結束時間</label>
+                                <input type="time" id="daily-end-time" class="input-field" value="21:00">
+                            </div>
+                        </div>
+                    </div>
                     <div class="meal-budget-section">
                         <label style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.5rem;display:block">每餐預算 (每人)</label>
                         <div class="meal-budget-grid">
@@ -197,14 +211,30 @@
                 <h3 class="setup-title"><i class="fas fa-train"></i> 前往交通方式</h3>
                 <div class="form-group" style="margin-bottom:1rem">
                     <label class="form-label"><i class="fas fa-map-pin"></i> 出發地</label>
-                    <select id="departure-city" class="input-field">
-                        <option value="taipei">台北</option>
-                        <option value="taoyuan">桃園</option>
-                        <option value="hsinchu">新竹</option>
-                        <option value="taichung">台中</option>
-                        <option value="tainan">台南</option>
-                        <option value="kaohsiung">高雄</option>
-                    </select>
+                    <div style="position:relative">
+                        <input type="text" id="departure-city-input" class="input-field" list="departure-city-list" placeholder="選擇或輸入出發地" value="台北">
+                        <datalist id="departure-city-list">
+                            <option value="基隆" data-key="keelung">
+                            <option value="台北" data-key="taipei">
+                            <option value="桃園" data-key="taoyuan">
+                            <option value="新竹" data-key="hsinchu">
+                            <option value="苗栗" data-key="miaoli">
+                            <option value="台中" data-key="taichung">
+                            <option value="彰化" data-key="changhua">
+                            <option value="南投" data-key="nantou">
+                            <option value="雲林" data-key="yunlin">
+                            <option value="嘉義" data-key="chiayi">
+                            <option value="台南" data-key="tainan">
+                            <option value="高雄" data-key="kaohsiung">
+                            <option value="屏東" data-key="pingtung">
+                            <option value="宜蘭" data-key="yilan">
+                            <option value="花蓮" data-key="hualien">
+                            <option value="台東" data-key="taitung">
+                            <option value="澎湖" data-key="penghu">
+                            <option value="金門" data-key="kinmen">
+                            <option value="馬祖" data-key="matsu">
+                        </datalist>
+                    </div>
                 </div>
                 <div class="transport-select-grid" id="transport-select-grid"></div>
             </div>
@@ -452,9 +482,9 @@
         </nav>
     </div>
 
-    <script src="js/data.js?v=9"></script>
-    <script src="js/map.js?v=9"></script>
-    <script src="js/app.js?v=9"></script>
+    <script src="js/data.js?v=10"></script>
+    <script src="js/map.js?v=10"></script>
+    <script src="js/app.js?v=10"></script>
     <!-- PWA Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
