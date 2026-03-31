@@ -7,7 +7,7 @@
     <title>TravelGo - 智慧旅遊規劃</title>
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#FF8FA3">
+    <meta name="theme-color" content="#6366F1">
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,9 +15,9 @@
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="css/style.css?v=8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -29,9 +29,9 @@
     <!-- 啟動畫面 -->
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
-            <div class="splash-icon">🐻</div>
+            <div class="splash-icon"></div>
             <h1>TravelGo</h1>
-            <p>可愛動物帶你去旅行</p>
+            <p>智慧旅遊規劃</p>
             <div class="splash-loader"></div>
         </div>
     </div>
@@ -58,15 +58,10 @@
         <section id="setup-section" class="section setup-section">
             <div class="setup-hero">
                 <div class="hero-bg-animation"></div>
-                <div class="hero-animals">
-                    <span class="animal-float">🐱</span>
-                    <span class="animal-float">🐶</span>
-                    <span class="animal-float">🐰</span>
-                    <span class="animal-float">🦊</span>
-                </div>
+                <div class="hero-animals"></div>
                 <div class="hero-overlay">
-                    <h2>和小動物一起出發吧</h2>
-                    <p>選擇目的地，可愛夥伴幫你安排最棒行程</p>
+                    <h2>規劃你的完美旅程</h2>
+                    <p>選擇目的地，智慧引擎為你安排最佳行程</p>
                 </div>
             </div>
 
@@ -314,7 +309,7 @@
             </div>
 
             <button id="btn-generate-trip" class="btn-primary btn-full btn-lg">
-                <i class="fas fa-magic"></i> 🐾 自動產生最佳行程
+                <i class="fas fa-magic"></i> 自動產生最佳行程
             </button>
         </section>
 
@@ -436,9 +431,9 @@
         </nav>
     </div>
 
-    <script src="js/data.js?v=7"></script>
-    <script src="js/map.js?v=7"></script>
-    <script src="js/app.js?v=7"></script>
+    <script src="js/data.js?v=8"></script>
+    <script src="js/map.js?v=8"></script>
+    <script src="js/app.js?v=8"></script>
     <!-- PWA Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
