@@ -120,6 +120,7 @@ class TravelApp {
         this.selectedDays = 4;
         this.startDate = null;
         this.selectedTransport = 'train';
+        this.departureCity = 'taipei';
         this.selectedHotel = null;
         this.generatedItinerary = null;
         this.editMode = false;
@@ -175,6 +176,7 @@ class TravelApp {
             btn.classList.add('active');
             this.selectedCity = btn.dataset.city;
             this.renderHotelList();
+            this.renderTransportOptions();
             this.renderYTRecommendations();
         });
     }
@@ -274,11 +276,21 @@ class TravelApp {
     // ===== Transport =====
     renderTransportOptions() {
         const grid = document.getElementById('transport-select-grid');
-        grid.innerHTML = TRANSPORT_OPTIONS.map(t => `
-            <div class="transport-option ${t.id === this.selectedTransport ? 'active' : ''}" data-transport="${t.id}">
+        const depRoutes = DEPARTURE_ROUTES[this.departureCity]?.transports[this.selectedCity];
+        const availableTypes = depRoutes ? depRoutes.map(r => r.type) : null;
+        const options = availableTypes ? TRANSPORT_OPTIONS.filter(t => availableTypes.includes(t.id)) : TRANSPORT_OPTIONS;
+        // If current selection is not available, default to first available
+        if (options.length > 0 && !options.find(t => t.id === this.selectedTransport)) {
+            this.selectedTransport = options[0].id;
+        }
+        grid.innerHTML = options.map(t => {
+            const route = depRoutes?.find(r => r.type === t.id);
+            const priceInfo = route ? ` · NT$${route.price}` : '';
+            return `<div class="transport-option ${t.id === this.selectedTransport ? 'active' : ''}" data-transport="${t.id}">
                 <div class="t-icon ${t.iconClass}"><i class="fas ${t.icon}"></i></div>
-                <div class="t-info"><div class="t-name">${t.name}</div><div class="t-detail">${t.detail}</div></div>
-            </div>`).join('');
+                <div class="t-info"><div class="t-name">${t.name}</div><div class="t-detail">${t.detail}${priceInfo}</div></div>
+            </div>`;
+        }).join('');
         grid.addEventListener('click', (e) => {
             const opt = e.target.closest('.transport-option');
             if (!opt) return;
@@ -315,7 +327,7 @@ class TravelApp {
                     <div class="hotel-name">${h.name} <span style="color:#fbbf24">★</span> ${h.rating}</div>
                     <div class="hotel-meta">${h.type} · ${h.address}</div>
                     <div class="hotel-prices">${this.renderPlatformPrices(h)}</div>
-                    ${h.lat && h.lng ? `<a href="https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a>` : ''}
+                    ${h.lat && h.lng ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name)}+${h.lat},${h.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -541,6 +553,10 @@ class TravelApp {
         document.getElementById('btn-export-pdf').addEventListener('click', () => this.exportPDF());
         document.getElementById('modal-close').addEventListener('click', () => this.closeModal('detail-modal'));
         document.getElementById('edit-modal-close').addEventListener('click', () => this.closeModal('edit-modal'));
+        document.getElementById('departure-city')?.addEventListener('change', (e) => {
+            this.departureCity = e.target.value;
+            this.renderTransportOptions();
+        });
         document.getElementById('detail-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeModal('detail-modal'); });
         document.getElementById('edit-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeModal('edit-modal'); });
         document.getElementById('yt-player-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeYTPlayer(); });
@@ -618,8 +634,9 @@ class TravelApp {
             const isFirst = d === 0, isLast = d === this.selectedDays - 1;
 
             if (isFirst) {
-                const tr = data.transport?.find(t => t.type === this.selectedTransport);
-                items.push({ time: '09:00', title: `搭乘${tr?.name || '交通工具'}前往${data.name}`, type: 'transport', desc: tr ? `${tr.route} ${tr.duration}` : '' });
+                const depRoutes = DEPARTURE_ROUTES[this.departureCity]?.transports[this.selectedCity];
+                const tr = depRoutes?.find(t => t.type === this.selectedTransport) || data.transport?.find(t => t.type === this.selectedTransport);
+                items.push({ time: '09:00', title: `搭乘${tr?.name || '交通工具'}前往${data.name}`, type: 'transport', desc: tr ? `${tr.route} ${tr.duration} · NT$${tr.price}/人` : '' });
                 items.push({ time: '11:30', title: `抵達${data.name}`, type: 'transport', desc: '前往住宿放行李' });
             }
             if (!isFirst) {
@@ -655,8 +672,9 @@ class TravelApp {
             if (isFirst) items.push({ time: '17:00', title: `${hotel.name} Check-in`, type: 'hotel', desc: hotel.type });
             if (isLast) {
                 items.push({ time: '08:30', title: '退房整理行李', type: 'hotel', desc: '' });
-                const tr = data.transport?.find(t => t.type === this.selectedTransport);
-                items.push({ time: '14:00', title: `搭乘${tr?.name || '交通工具'}返回`, type: 'transport', desc: tr?.duration || '' });
+                const depRoutes = DEPARTURE_ROUTES[this.departureCity]?.transports[this.selectedCity];
+                const tr = depRoutes?.find(t => t.type === this.selectedTransport) || data.transport?.find(t => t.type === this.selectedTransport);
+                items.push({ time: '14:00', title: `搭乘${tr?.name || '交通工具'}返回${DEPARTURE_ROUTES[this.departureCity]?.name || ''}`, type: 'transport', desc: tr?.duration || '' });
             }
 
             items.sort((a, b) => a.time.localeCompare(b.time));
@@ -793,7 +811,7 @@ class TravelApp {
 
         return `<div class="timeline-item ${item.type} ${warn ? 'closed' : ''}">
             <div class="timeline-time">${item.time}</div>
-            <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
+            <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.spotData?.name || item.title)}+${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
             ${item.desc ? `<div class="timeline-desc">${item.desc}</div>` : ''}${warn}
             <div class="timeline-actions">
                 <button class="btn-edit-item" onclick="app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i> 編輯</button>
@@ -915,7 +933,7 @@ class TravelApp {
                     <span class="card-price">${a.ticket===0?'免費':`NT$${a.ticket}`}</span>
                 </div>
             </div>
-            <div class="card-footer"><div class="card-tags">${a.tags.map(t=>`<span class="tag ${t==='必訪'?'tag-hot':''} ${t==='門票'?'tag-ticket':''}">${t}</span>`).join('')}</div><a href="https://www.google.com/maps/search/?api=1&query=${a.lat},${a.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a></div></div>`;
+            <div class="card-footer"><div class="card-tags">${a.tags.map(t=>`<span class="tag ${t==='必訪'?'tag-hot':''} ${t==='門票'?'tag-ticket':''}">${t}</span>`).join('')}</div><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name)}+${a.lat},${a.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a></div></div>`;
     }
 
     // ===== Restaurants (with editable price) =====
@@ -942,33 +960,69 @@ class TravelApp {
                     <span class="card-price">~NT$<input type="number" class="price-input-inline" value="${r.price}" min="0" onclick="event.stopPropagation()" onchange="event.stopPropagation()"> <span class="card-price-label">/人</span></span>
                 </div>
             </div>
-            <div class="card-footer"><div class="card-tags">${r.tags.map(t=>`<span class="tag ${t==='必吃'||t==='排隊名店'?'tag-hot':''}">${t}</span>`).join('')}</div><a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a></div></div>`;
+            <div class="card-footer"><div class="card-tags">${r.tags.map(t=>`<span class="tag ${t==='必吃'||t==='排隊名店'?'tag-hot':''}">${t}</span>`).join('')}</div><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}+${r.lat},${r.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a></div></div>`;
     }
 
     // ===== Transport Detail =====
     renderTransportDetail() {
         const c = document.getElementById('tab-transport-detail');
         const data = getDestData(this.selectedCity);
-        if (!data.transport) { c.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem">交通資訊建置中</p>'; return; }
-        c.innerHTML = data.transport.map(t => `
-            <div class="transport-card">
-                <div class="transport-header" onclick="this.nextElementSibling.classList.toggle('show')">
-                    <div class="transport-icon ${t.type}"><i class="fas ${t.icon}"></i></div>
-                    <div class="transport-info"><div class="transport-name">${t.name}</div><div class="transport-route">${t.route}</div></div>
-                    <div class="transport-price-tag"><div class="price">NT$<input type="number" class="price-input-inline" value="${t.price}" min="0" onclick="event.stopPropagation()" onchange="event.stopPropagation()"></div><div class="label">單程/人</div></div>
-                </div>
-                <div class="transport-details">
-                    <div class="transport-detail-grid">
-                        <div class="detail-item"><div class="label">行車時間</div><div class="value">${t.duration}</div></div>
-                        <div class="detail-item"><div class="label">班次頻率</div><div class="value">${t.frequency}</div></div>
-                        <div class="detail-item"><div class="label">出發地</div><div class="value">${t.departure}</div></div>
-                        <div class="detail-item"><div class="label">抵達地</div><div class="value">${t.arrival}</div></div>
+        const depRoutes = DEPARTURE_ROUTES[this.departureCity]?.transports[this.selectedCity];
+        const depName = DEPARTURE_ROUTES[this.departureCity]?.name || '出發地';
+
+        // Build departure route section if available
+        let depHTML = '';
+        if (depRoutes && depRoutes.length > 0) {
+            depHTML = `<div class="section-header" style="margin-bottom:0.75rem"><h3><i class="fas fa-map-pin"></i> 從${sanitizeHTML(depName)}出發</h3></div>` +
+                depRoutes.map(t => {
+                    const icon = TRANSPORT_OPTIONS.find(o => o.id === t.type)?.icon || 'fa-route';
+                    return `<div class="transport-card">
+                        <div class="transport-header" onclick="this.nextElementSibling.classList.toggle('show')">
+                            <div class="transport-icon ${t.type}"><i class="fas ${icon}"></i></div>
+                            <div class="transport-info"><div class="transport-name">${t.name}</div><div class="transport-route">${t.route}</div></div>
+                            <div class="transport-price-tag"><div class="price">NT$${t.price}</div><div class="label">單程/人</div></div>
+                        </div>
+                        <div class="transport-details">
+                            <div class="transport-detail-grid">
+                                <div class="detail-item"><div class="label">行車時間</div><div class="value">${t.duration}</div></div>
+                                <div class="detail-item"><div class="label">出發地</div><div class="value">${t.departure}</div></div>
+                                <div class="detail-item"><div class="label">抵達地</div><div class="value">${t.arrival}</div></div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+        }
+
+        // Original transport data from destination (fallback / additional info)
+        let origHTML = '';
+        if (data.transport) {
+            origHTML = (depHTML ? `<div class="section-header" style="margin:1rem 0 0.75rem"><h3><i class="fas fa-info-circle"></i> 詳細交通資訊</h3></div>` : '') +
+                data.transport.map(t => `
+                <div class="transport-card">
+                    <div class="transport-header" onclick="this.nextElementSibling.classList.toggle('show')">
+                        <div class="transport-icon ${t.type}"><i class="fas ${t.icon}"></i></div>
+                        <div class="transport-info"><div class="transport-name">${t.name}</div><div class="transport-route">${t.route}</div></div>
+                        <div class="transport-price-tag"><div class="price">NT$<input type="number" class="price-input-inline" value="${t.price}" min="0" onclick="event.stopPropagation()" onchange="event.stopPropagation()"></div><div class="label">單程/人</div></div>
                     </div>
-                    <div style="margin-top:0.5rem"><strong style="font-size:0.8rem;color:var(--success)"><i class="fas fa-thumbs-up"></i> 優點</strong>${t.pros.map(p=>`<div style="font-size:0.75rem;color:var(--text-secondary)">✓ ${p}</div>`).join('')}</div>
-                    <div style="margin-top:0.4rem"><strong style="font-size:0.8rem;color:var(--danger)"><i class="fas fa-thumbs-down"></i> 缺點</strong>${t.cons.map(x=>`<div style="font-size:0.75rem;color:var(--text-secondary)">✗ ${x}</div>`).join('')}</div>
-                    <div class="transport-tip"><i class="fas fa-lightbulb"></i> ${t.tip}</div>
-                </div>
-            </div>`).join('');
+                    <div class="transport-details">
+                        <div class="transport-detail-grid">
+                            <div class="detail-item"><div class="label">行車時間</div><div class="value">${t.duration}</div></div>
+                            <div class="detail-item"><div class="label">班次頻率</div><div class="value">${t.frequency}</div></div>
+                            <div class="detail-item"><div class="label">出發地</div><div class="value">${t.departure}</div></div>
+                            <div class="detail-item"><div class="label">抵達地</div><div class="value">${t.arrival}</div></div>
+                        </div>
+                        <div style="margin-top:0.5rem"><strong style="font-size:0.8rem;color:var(--success)"><i class="fas fa-thumbs-up"></i> 優點</strong>${t.pros.map(p=>`<div style="font-size:0.75rem;color:var(--text-secondary)">✓ ${p}</div>`).join('')}</div>
+                        <div style="margin-top:0.4rem"><strong style="font-size:0.8rem;color:var(--danger)"><i class="fas fa-thumbs-down"></i> 缺點</strong>${t.cons.map(x=>`<div style="font-size:0.75rem;color:var(--text-secondary)">✗ ${x}</div>`).join('')}</div>
+                        <div class="transport-tip"><i class="fas fa-lightbulb"></i> ${t.tip}</div>
+                    </div>
+                </div>`).join('');
+        }
+
+        if (!depHTML && !origHTML) {
+            c.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem">交通資訊建置中</p>';
+            return;
+        }
+        c.innerHTML = depHTML + origHTML;
     }
 
     // ===== YouTube Tab =====
@@ -1021,7 +1075,7 @@ class TravelApp {
             </div>
             <div class="modal-actions">
                 <button class="btn-outline" onclick="app.mapManager.showLocation('${item.name.replace(/'/g,"\\'")}',${item.lat},${item.lng},'${type}');app.closeModal('detail-modal')"><i class="fas fa-map"></i> 地圖</button>
-                <a href="https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}" target="_blank" class="btn-outline" style="text-decoration:none;text-align:center;flex:1;padding:0.6rem;border-radius:var(--radius-sm);font-size:0.85rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.3rem;background:rgba(255,255,255,0.7);color:#1a73e8;border:1.5px solid #1a73e8"><i class="fas fa-map-marker-alt"></i> Google Maps</a>
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name)}+${item.lat},${item.lng}" target="_blank" class="btn-outline" style="text-decoration:none;text-align:center;flex:1;padding:0.6rem;border-radius:var(--radius-sm);font-size:0.85rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.3rem;background:rgba(255,255,255,0.7);color:#1a73e8;border:1.5px solid #1a73e8"><i class="fas fa-map-marker-alt"></i> Google Maps</a>
                 <button class="btn-primary" style="border:none" onclick="app.closeModal('detail-modal')"><i class="fas fa-check"></i> 關閉</button>
             </div>`;
         document.getElementById('modal-body').innerHTML = html;
@@ -1332,57 +1386,3 @@ document.addEventListener('click', function(e) {
     setTimeout(() => ripple.remove(), 600);
 });
 
-// ===== PWA Install Prompt =====
-(function() {
-    // iOS Safari detection
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-
-    if (isIOS && !isStandalone && !localStorage.getItem('travelgo_pwa_dismissed')) {
-        setTimeout(() => {
-            const banner = document.createElement('div');
-            banner.className = 'pwa-install-banner';
-            banner.innerHTML = `
-                <div class="pwa-icon"><i class="fas fa-mobile-alt"></i></div>
-                <div class="pwa-text">
-                    <strong>安裝 TravelGo App</strong>
-                    <span>點擊 Safari 分享按鈕 <i class="fas fa-external-link-alt"></i> 然後選擇「加入主畫面」即可安裝</span>
-                </div>
-                <button class="pwa-close" onclick="this.parentElement.remove();localStorage.setItem('travelgo_pwa_dismissed','1')"><i class="fas fa-times"></i></button>
-            `;
-            document.body.appendChild(banner);
-            // Auto dismiss after 15 seconds
-            setTimeout(() => banner.remove(), 15000);
-        }, 3000);
-    }
-
-    // Android / Chrome install prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (localStorage.getItem('travelgo_pwa_dismissed')) return;
-        const banner = document.createElement('div');
-        banner.className = 'pwa-install-banner';
-        banner.innerHTML = `
-            <div class="pwa-icon"><i class="fas fa-download"></i></div>
-            <div class="pwa-text">
-                <strong>安裝 TravelGo App</strong>
-                <span>加入桌面，離線也能查看行程</span>
-            </div>
-            <button class="btn-primary-sm" onclick="installPWA(this)" style="white-space:nowrap"><i class="fas fa-plus"></i> 安裝</button>
-            <button class="pwa-close" onclick="this.parentElement.remove();localStorage.setItem('travelgo_pwa_dismissed','1')"><i class="fas fa-times"></i></button>
-        `;
-        document.body.appendChild(banner);
-    });
-
-    window.installPWA = async function(btn) {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const result = await deferredPrompt.userChoice;
-        if (result.outcome === 'accepted') {
-            btn.closest('.pwa-install-banner').remove();
-        }
-        deferredPrompt = null;
-    };
-})();

@@ -634,6 +634,55 @@ function getDayName(date) {
     return ['日','一','二','三','四','五','六'][date.getDay()];
 }
 
+// ===== Departure Routes =====
+const DEPARTURE_ROUTES = {
+  taipei: { name: '台北', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '台北 → 花蓮', price: 440, duration: '2小時10分', departure: '台北車站', arrival: '花蓮車站' },
+      { type: 'hsr', name: '高鐵+轉乘', route: '台北 → 花蓮', price: 1050, duration: '約3.5小時', departure: '台北高鐵站', arrival: '花蓮車站' },
+      { type: 'plane', name: '國內線飛機', route: '松山 → 花蓮', price: 1500, duration: '35分鐘', departure: '松山機場', arrival: '花蓮航空站' },
+      { type: 'bus', name: '客運巴士', route: '台北 → 花蓮', price: 310, duration: '約3.5小時', departure: '台北轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '台北 → 花蓮', price: 800, duration: '約3小時', departure: '台北', arrival: '花蓮' },
+    ]
+  }},
+  taichung: { name: '台中', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '台中 → 花蓮', price: 598, duration: '4小時30分', departure: '台中車站', arrival: '花蓮車站' },
+      { type: 'bus', name: '客運巴士', route: '台中 → 花蓮', price: 450, duration: '約5小時', departure: '台中轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '台中 → 花蓮', price: 1200, duration: '約4.5小時', departure: '台中', arrival: '花蓮' },
+    ]
+  }},
+  kaohsiung: { name: '高雄', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '高雄 → 花蓮', price: 780, duration: '5小時40分', departure: '高雄車站', arrival: '花蓮車站' },
+      { type: 'plane', name: '國內線飛機', route: '高雄 → 花蓮', price: 1800, duration: '50分鐘', departure: '高雄小港機場', arrival: '花蓮航空站' },
+      { type: 'bus', name: '客運巴士', route: '高雄 → 花蓮', price: 600, duration: '約7小時', departure: '高雄轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '高雄 → 花蓮', price: 1500, duration: '約5.5小時', departure: '高雄', arrival: '花蓮' },
+    ]
+  }},
+  tainan: { name: '台南', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '台南 → 花蓮', price: 680, duration: '5小時', departure: '台南車站', arrival: '花蓮車站' },
+      { type: 'bus', name: '客運巴士', route: '台南 → 花蓮', price: 550, duration: '約6.5小時', departure: '台南轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '台南 → 花蓮', price: 1300, duration: '約5小時', departure: '台南', arrival: '花蓮' },
+    ]
+  }},
+  taoyuan: { name: '桃園', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '桃園 → 花蓮', price: 380, duration: '2小時40分', departure: '桃園車站', arrival: '花蓮車站' },
+      { type: 'bus', name: '客運巴士', route: '桃園 → 花蓮', price: 280, duration: '約4小時', departure: '桃園轉運站', arrival: '花蓮客運站' },
+      { type: 'car', name: '自駕', route: '桃園 → 花蓮', price: 700, duration: '約3小時', departure: '桃園', arrival: '花蓮' },
+    ]
+  }},
+  hsinchu: { name: '新竹', transports: {
+    hualien: [
+      { type: 'train', name: '台鐵自強號', route: '新竹 → 花蓮', price: 420, duration: '3小時20分', departure: '新竹車站', arrival: '花蓮車站' },
+      { type: 'car', name: '自駕', route: '新竹 → 花蓮', price: 900, duration: '約3.5小時', departure: '新竹', arrival: '花蓮' },
+    ]
+  }},
+};
+Object.freeze(DEPARTURE_ROUTES);
+
 // ===== Freeze Critical Data =====
 function deepFreeze(obj) {
     Object.freeze(obj);
