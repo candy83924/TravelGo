@@ -1032,20 +1032,43 @@ body {
 
 /* ===== Scrollbar ===== */
 /* ===== Drag & Drop ===== */
-.timeline-item {
+.timeline-item[draggable] {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease,
+              box-shadow 0.3s ease,
+              margin 0.3s ease;
   cursor: grab;
-  transition: all 0.2s ease;
 }
-.timeline-item:active {
+
+.timeline-item[draggable]:active {
   cursor: grabbing;
 }
+
 .timeline-item.dragging {
-  opacity: 0.5;
-  transform: scale(0.98);
-  box-shadow: 0 8px 25px rgba(255,143,163,0.3);
+  opacity: 0.4;
+  transform: scale(0.95) rotate(1deg);
+  box-shadow: 0 10px 30px rgba(255,143,163,0.3);
+  z-index: 100;
 }
+
 .timeline-item.drag-over {
   border-top: 3px solid var(--primary);
+  margin-top: 12px;
+  transition: margin 0.2s ease, border 0.2s ease;
+}
+
+.timeline-item.drag-over::before {
+  content: '放在這裡';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  color: var(--primary);
+  background: rgba(255,143,163,0.1);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* Editable time input */

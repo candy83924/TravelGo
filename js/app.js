@@ -127,8 +127,7 @@ class TravelApp {
         this.preferences = { rating: 4.0, mealBudget: 500, includeTicket: true, includeFree: true };
         this.attractionsPerDay = 3;
         this.mealBudgets = { breakfast: 150, lunch: 300, dinner: 500 };
-        this.dailyStartTime = '09:00';
-        this.dailyEndTime = '21:00';
+        this.perDayTimes = [];
         this.init();
     }
 
@@ -211,6 +210,7 @@ class TravelApp {
                 this.selectedDays = parseInt(btn.dataset.days);
                 document.getElementById('custom-days').value = this.selectedDays;
                 this.updateDaysLabel();
+                this.renderPerDayTimes();
             });
         });
     }
@@ -218,16 +218,17 @@ class TravelApp {
     setupCustomDays() {
         const input = document.getElementById('custom-days');
         document.getElementById('days-minus').addEventListener('click', () => {
-            if (this.selectedDays > 1) { this.selectedDays--; input.value = this.selectedDays; this.updateDaysLabel(); this.highlightDayBtn(); }
+            if (this.selectedDays > 1) { this.selectedDays--; input.value = this.selectedDays; this.updateDaysLabel(); this.highlightDayBtn(); this.renderPerDayTimes(); }
         });
         document.getElementById('days-plus').addEventListener('click', () => {
-            if (this.selectedDays < 14) { this.selectedDays++; input.value = this.selectedDays; this.updateDaysLabel(); this.highlightDayBtn(); }
+            if (this.selectedDays < 14) { this.selectedDays++; input.value = this.selectedDays; this.updateDaysLabel(); this.highlightDayBtn(); this.renderPerDayTimes(); }
         });
         input.addEventListener('change', () => {
             this.selectedDays = Math.max(1, Math.min(14, parseInt(input.value) || 4));
-            input.value = this.selectedDays; this.updateDaysLabel(); this.highlightDayBtn();
+            input.value = this.selectedDays; this.updateDaysLabel(); this.highlightDayBtn(); this.renderPerDayTimes();
         });
         this.updateDaysLabel();
+        this.renderPerDayTimes();
     }
 
     updateDaysLabel() { document.getElementById('days-label').textContent = `天 ${this.selectedDays - 1} 夜`; }
@@ -259,6 +260,25 @@ class TravelApp {
             this.mealBudgets.dinner = Math.max(0, parseInt(e.target.value) || 0);
             e.target.value = this.mealBudgets.dinner;
         });
+    }
+
+    renderPerDayTimes() {
+        const container = document.getElementById('per-day-times-container');
+        if (!container || !this.selectedDays) return;
+        if (this.perDayTimes.length !== this.selectedDays) {
+            this.perDayTimes = [];
+            for (let i = 0; i < this.selectedDays; i++) {
+                this.perDayTimes.push({ start: '09:00', end: '21:00' });
+            }
+        }
+        container.innerHTML = this.perDayTimes.map((t, i) => `
+            <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;padding:0.5rem;background:rgba(255,143,163,0.05);border-radius:var(--radius-sm)">
+                <span style="font-size:0.8rem;font-weight:600;color:var(--primary);min-width:3rem">Day ${i+1}</span>
+                <input type="time" class="input-field" value="${t.start}" onchange="app.perDayTimes[${i}].start=this.value" style="flex:1;padding:0.4rem;font-size:0.8rem">
+                <span style="color:var(--text-secondary);font-size:0.8rem">～</span>
+                <input type="time" class="input-field" value="${t.end}" onchange="app.perDayTimes[${i}].end=this.value" style="flex:1;padding:0.4rem;font-size:0.8rem">
+            </div>
+        `).join('');
     }
 
     // ===== Preferences =====
@@ -570,8 +590,6 @@ class TravelApp {
                 }
             });
         }
-        document.getElementById('daily-start-time')?.addEventListener('change', (e) => { this.dailyStartTime = e.target.value; });
-        document.getElementById('daily-end-time')?.addEventListener('change', (e) => { this.dailyEndTime = e.target.value; });
         document.getElementById('detail-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeModal('detail-modal'); });
         document.getElementById('edit-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeModal('edit-modal'); });
         document.getElementById('yt-player-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) this.closeYTPlayer(); });
@@ -633,8 +651,7 @@ class TravelApp {
             evening:   { start: 1080, end: 1260 },   // 18:00-21:00
         };
 
-        const startMin = timeToMin(this.dailyStartTime);
-        const endMin = timeToMin(this.dailyEndTime);
+        // Per-day times will be read inside the loop
 
         // Check if attraction is a night market
         function isNightMarket(item) {
@@ -684,6 +701,9 @@ class TravelApp {
             const date = new Date(this.startDate); date.setDate(date.getDate() + d);
             const items = [], spots = [];
             const isFirst = d === 0, isLast = d === this.selectedDays - 1;
+            const dayTimes = this.perDayTimes[d] || { start: '09:00', end: '21:00' };
+            const startMin = timeToMin(dayTimes.start);
+            const endMin = timeToMin(dayTimes.end);
             let currentMin = startMin; // Track current time position
 
             // === FIRST DAY: Transport + Arrival ===
@@ -943,7 +963,12 @@ class TravelApp {
         const el = document.getElementById(`tab-${tab}`);
         if (el) el.classList.add('active');
         this.renderTab(tab);
-        if (tab === 'map-overview') setTimeout(() => this.mapManager.invalidate(), 100);
+        if (tab === 'map-overview') {
+            setTimeout(() => {
+                this.mapManager.invalidate();
+                this.showMapForDay('all');
+            }, 200);
+        }
     }
 
     renderTab(tab) {
@@ -999,10 +1024,9 @@ class TravelApp {
             <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.spotData?.name || item.title)}+${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
             ${item.desc ? `<div class="timeline-desc">${item.desc}</div>` : ''}${warn}
             <div class="timeline-actions">
-                <button class="btn-edit-item" onclick="app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i> 編輯</button>
-                <button class="btn-delete-item" onclick="app.deleteItem(${dayNum},${idx})"><i class="fas fa-trash"></i> 刪除</button>
-                <button class="delete-item-btn" onclick="app.removeItem(${di}, ${idx})" title="移除" style="background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:0.2rem 0.5rem;cursor:pointer;font-size:0.75rem"><i class="fas fa-times"></i></button>
-                ${item.spotData ? `<button class="btn-edit-item" onclick="app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i> 地圖</button>` : ''}
+                ${item.spotData ? `<button class="btn-edit-item" onclick="app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i></button>` : ''}
+                <button class="btn-edit-item" onclick="app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i></button>
+                <button class="btn-edit-item" onclick="app.removeItem(${di},${idx})" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
             </div></div>`;
     }
 
@@ -1081,7 +1105,12 @@ class TravelApp {
             <div style="margin-bottom:1rem">
                 <h4 style="margin-bottom:0.5rem"><span style="background:var(--primary);color:white;padding:0.15rem 0.5rem;border-radius:50%;font-size:0.8rem">${day.day}</span> Day ${day.day} - ${day.title} <span style="font-size:0.75rem;color:var(--text-light)">${this.formatDate(day.date)}</span></h4>
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem">
-                    ${day.spots.map(s => `<button class="btn-outline-sm" onclick="app.showOnMap(${s.lat},${s.lng},'${s.name.replace(/'/g,"\\'")}')"><i class="fas fa-map-marker-alt"></i> ${s.name}</button>`).join('')}
+                    ${day.spots.map(s => `
+                        <button class="btn-outline-sm" onclick="app.showOnMap(${s.lat},${s.lng},'${s.name.replace(/'/g,"\\'")}')">
+                            <i class="fas fa-map-marker-alt"></i> ${s.name}
+                        </button>
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name)}+${s.lat},${s.lng}" target="_blank" class="gmaps-link" style="font-size:0.65rem;padding:0.1rem 0.3rem;margin-left:-0.3rem" onclick="event.stopPropagation()"><i class="fas fa-external-link-alt"></i></a>
+                    `).join('')}
                     <button class="btn-primary-sm" onclick="app.showMapForDay('${day.day}')"><i class="fas fa-route"></i> 顯示路線</button>
                 </div>
                 ${day.totalDistance ? `<div style="font-size:0.75rem;color:var(--primary)"><i class="fas fa-road"></i> ~${day.totalDistance}km</div>` : ''}
@@ -1276,7 +1305,6 @@ class TravelApp {
     setupDragDrop() {
         const items = document.querySelectorAll('.timeline-item[draggable]');
         let dragSrc = null;
-        const self = this;
 
         items.forEach(item => {
             item.addEventListener('dragstart', (e) => {
@@ -1287,49 +1315,53 @@ class TravelApp {
                     day: parseInt(item.dataset.day),
                     item: parseInt(item.dataset.item)
                 }));
+                hapticFeedback('light');
             });
 
             item.addEventListener('dragend', () => {
                 item.classList.remove('dragging');
-                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                document.querySelectorAll('.timeline-item.drag-over').forEach(el => el.classList.remove('drag-over'));
             });
 
             item.addEventListener('dragover', (e) => {
                 e.preventDefault();
+                if (item === dragSrc) return;
                 e.dataTransfer.dropEffect = 'move';
+                document.querySelectorAll('.timeline-item.drag-over').forEach(el => {
+                    if (el !== item) el.classList.remove('drag-over');
+                });
                 item.classList.add('drag-over');
             });
 
-            item.addEventListener('dragleave', () => {
-                item.classList.remove('drag-over');
+            item.addEventListener('dragleave', (e) => {
+                if (!item.contains(e.relatedTarget)) {
+                    item.classList.remove('drag-over');
+                }
             });
 
             item.addEventListener('drop', (e) => {
                 e.preventDefault();
                 item.classList.remove('drag-over');
-                try {
-                    const src = JSON.parse(e.dataTransfer.getData('text/plain'));
-                    const dst = { day: parseInt(item.dataset.day), item: parseInt(item.dataset.item) };
+                if (!dragSrc) return;
+                const src = JSON.parse(e.dataTransfer.getData('text/plain'));
+                const dst = { day: parseInt(item.dataset.day), item: parseInt(item.dataset.item) };
 
-                    const srcDay = self.generatedItinerary.days[src.day];
-                    const dstDay = self.generatedItinerary.days[dst.day];
-                    if (srcDay && dstDay && srcDay.items[src.item] && dstDay.items[dst.item]) {
-                        const srcItem = srcDay.items[src.item];
-                        const dstItem = dstDay.items[dst.item];
-                        // Swap times
+                const srcDay = this.generatedItinerary.days[src.day];
+                const dstDay = this.generatedItinerary.days[dst.day];
+                if (srcDay && dstDay) {
+                    const srcItem = srcDay.items[src.item];
+                    const dstItem = dstDay.items[dst.item];
+                    if (srcItem && dstItem) {
                         const tmpTime = srcItem.time;
                         srcItem.time = dstItem.time;
                         dstItem.time = tmpTime;
-                        // Swap positions
                         srcDay.items[src.item] = dstItem;
                         dstDay.items[dst.item] = srcItem;
-                        // Re-render
-                        self.renderItinerary();
+                        this.renderItinerary();
                         hapticFeedback('medium');
                     }
-                } catch (err) {
-                    console.error('Drag drop error:', err);
                 }
+                dragSrc = null;
             });
         });
     }
@@ -1362,7 +1394,8 @@ class TravelApp {
 
         const modal = document.getElementById('detail-modal');
         modal.classList.remove('hidden');
-        modal.querySelector('.modal-body').innerHTML = `
+        modal.style.display = 'flex';
+        document.getElementById('modal-body').innerHTML = `
             <h3 style="margin-bottom:1rem"><i class="fas fa-plus-circle"></i> 新增行程項目</h3>
             <div style="margin-bottom:1rem">
                 <label class="form-label" style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">時間</label>
@@ -1454,7 +1487,7 @@ class TravelApp {
         this.showToast('已新增行程項目');
     }
 
-    closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    closeModal(id) { const el = document.getElementById(id); if (!el) return; el.classList.add('hidden'); el.style.display = 'none'; }
 
     // ===== Save / Load =====
     saveItinerary() {
