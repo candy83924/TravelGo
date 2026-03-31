@@ -1031,44 +1031,50 @@ body {
 .yt-player-responsive iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
 /* ===== Scrollbar ===== */
-/* ===== Drag & Drop ===== */
-.timeline-item[draggable] {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease,
-              box-shadow 0.3s ease,
-              margin 0.3s ease;
+/* ===== SortableJS Drag & Drop ===== */
+.timeline-item {
+  position: relative;
   cursor: grab;
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1),
+              box-shadow 0.25s ease,
+              opacity 0.25s ease;
+}
+.timeline-item:active { cursor: grabbing; }
+
+.sortable-ghost {
+  opacity: 0.3;
+  background: rgba(255,143,163,0.1) !important;
+  border: 2px dashed var(--primary) !important;
+  border-radius: var(--radius-sm);
 }
 
-.timeline-item[draggable]:active {
-  cursor: grabbing;
-}
-
-.timeline-item.dragging {
-  opacity: 0.4;
-  transform: scale(0.95) rotate(1deg);
-  box-shadow: 0 10px 30px rgba(255,143,163,0.3);
+.sortable-chosen {
+  box-shadow: 0 12px 35px rgba(255,143,163,0.35);
+  transform: scale(1.02);
   z-index: 100;
+  background: white;
+  border-radius: var(--radius-sm);
 }
 
-.timeline-item.drag-over {
-  border-top: 3px solid var(--primary);
-  margin-top: 12px;
-  transition: margin 0.2s ease, border 0.2s ease;
+.sortable-drag {
+  opacity: 0.9 !important;
+  box-shadow: 0 15px 40px rgba(255,143,163,0.4);
+  border-radius: var(--radius-sm);
+  background: white;
 }
 
-.timeline-item.drag-over::before {
-  content: '放在這裡';
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.65rem;
+/* Time display */
+.time-text {
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--primary);
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.time-text:hover {
   background: rgba(255,143,163,0.1);
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  white-space: nowrap;
 }
 
 /* Editable time input */

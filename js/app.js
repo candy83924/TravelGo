@@ -1017,16 +1017,17 @@ class TravelApp {
             mealBadge = `<span class="meal-type-badge ${item.mealType}">${mealLabels[item.mealType]}</span>`;
         }
 
-        return `<div class="timeline-item ${item.type} ${warn ? 'closed' : ''}" draggable="true" data-day="${di}" data-item="${idx}">
+        return `<div class="timeline-item ${item.type} ${warn ? 'closed' : ''}" data-day="${di}" data-item="${idx}">
             <div class="timeline-time">
-                <input type="time" class="time-edit-input" value="${item.time}" onchange="app.updateItemTime(${di}, ${idx}, this.value)" style="border:none;background:transparent;font-size:inherit;font-weight:inherit;color:inherit;padding:0;width:5em;cursor:pointer">
+                <span class="time-text" onclick="this.style.display='none';this.nextElementSibling.style.display='inline-block';this.nextElementSibling.focus()">${item.time}</span>
+                <input type="time" class="time-edit-input" value="${item.time}" style="display:none" onchange="app.updateItemTime(${di}, ${idx}, this.value);this.previousElementSibling.textContent=this.value;this.style.display='none';this.previousElementSibling.style.display='inline-block'" onblur="this.style.display='none';this.previousElementSibling.style.display='inline-block'">
             </div>
             <div class="timeline-title">${this.getIcon(item.type)} ${item.title}${mealBadge}${item.spotData?.lat && item.spotData?.lng ? ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.spotData?.name || item.title)}+${item.spotData.lat},${item.spotData.lng}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="font-size:0.6rem;padding:0.1rem 0.4rem"><i class="fas fa-map-marker-alt"></i></a>` : ''}</div>
             ${item.desc ? `<div class="timeline-desc">${item.desc}</div>` : ''}${warn}
             <div class="timeline-actions">
-                ${item.spotData ? `<button class="btn-edit-item" onclick="app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i></button>` : ''}
-                <button class="btn-edit-item" onclick="app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i></button>
-                <button class="btn-edit-item" onclick="app.removeItem(${di},${idx})" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
+                ${item.spotData ? `<button class="btn-edit-item" onclick="event.stopPropagation();app.showOnMap(${item.spotData.lat},${item.spotData.lng},'${item.spotData.name.replace(/'/g,"\\'")}','${item.type}')"><i class="fas fa-map"></i></button>` : ''}
+                <button class="btn-edit-item" onclick="event.stopPropagation();app.editItem(${dayNum},${idx})"><i class="fas fa-edit"></i></button>
+                <button class="btn-edit-item" onclick="event.stopPropagation();app.removeItem(${di},${idx})" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
             </div></div>`;
     }
 
@@ -1303,66 +1304,42 @@ class TravelApp {
 
     // ===== Drag & Drop =====
     setupDragDrop() {
-        const items = document.querySelectorAll('.timeline-item[draggable]');
-        let dragSrc = null;
+        if (typeof Sortable === 'undefined') return;
+        // Destroy old sortable instances
+        if (this._sortables) this._sortables.forEach(s => s.destroy());
+        this._sortables = [];
 
-        items.forEach(item => {
-            item.addEventListener('dragstart', (e) => {
-                dragSrc = item;
-                item.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', JSON.stringify({
-                    day: parseInt(item.dataset.day),
-                    item: parseInt(item.dataset.item)
-                }));
-                hapticFeedback('light');
-            });
+        const timelines = document.querySelectorAll('.timeline');
+        const self = this;
+        timelines.forEach((timeline, dayIdx) => {
+            const sortable = Sortable.create(timeline, {
+                group: 'itinerary',
+                animation: 250,
+                easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                handle: '.timeline-item',
+                delay: 100,
+                delayOnTouchOnly: true,
+                onEnd: function(evt) {
+                    const fromDayIdx = evt.from.closest('.day-section') ? Array.from(document.querySelectorAll('.timeline')).indexOf(evt.from) : 0;
+                    const toDayIdx = evt.to.closest('.day-section') ? Array.from(document.querySelectorAll('.timeline')).indexOf(evt.to) : 0;
+                    const oldIdx = evt.oldIndex;
+                    const newIdx = evt.newIndex;
 
-            item.addEventListener('dragend', () => {
-                item.classList.remove('dragging');
-                document.querySelectorAll('.timeline-item.drag-over').forEach(el => el.classList.remove('drag-over'));
-            });
+                    const fromDay = self.generatedItinerary.days[fromDayIdx];
+                    const toDay = self.generatedItinerary.days[toDayIdx];
+                    if (!fromDay || !toDay) return;
 
-            item.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                if (item === dragSrc) return;
-                e.dataTransfer.dropEffect = 'move';
-                document.querySelectorAll('.timeline-item.drag-over').forEach(el => {
-                    if (el !== item) el.classList.remove('drag-over');
-                });
-                item.classList.add('drag-over');
-            });
+                    const [movedItem] = fromDay.items.splice(oldIdx, 1);
+                    toDay.items.splice(newIdx, 0, movedItem);
 
-            item.addEventListener('dragleave', (e) => {
-                if (!item.contains(e.relatedTarget)) {
-                    item.classList.remove('drag-over');
+                    hapticFeedback('medium');
+                    self.renderItinerary();
                 }
             });
-
-            item.addEventListener('drop', (e) => {
-                e.preventDefault();
-                item.classList.remove('drag-over');
-                if (!dragSrc) return;
-                const src = JSON.parse(e.dataTransfer.getData('text/plain'));
-                const dst = { day: parseInt(item.dataset.day), item: parseInt(item.dataset.item) };
-
-                const srcDay = this.generatedItinerary.days[src.day];
-                const dstDay = this.generatedItinerary.days[dst.day];
-                if (srcDay && dstDay) {
-                    const srcItem = srcDay.items[src.item];
-                    const dstItem = dstDay.items[dst.item];
-                    if (srcItem && dstItem) {
-                        const tmpTime = srcItem.time;
-                        srcItem.time = dstItem.time;
-                        dstItem.time = tmpTime;
-                        srcDay.items[src.item] = dstItem;
-                        dstDay.items[dst.item] = srcItem;
-                        this.renderItinerary();
-                        hapticFeedback('medium');
-                    }
-                }
-                dragSrc = null;
-            });
+            self._sortables.push(sortable);
         });
     }
 
@@ -1487,7 +1464,7 @@ class TravelApp {
         this.showToast('已新增行程項目');
     }
 
-    closeModal(id) { const el = document.getElementById(id); if (!el) return; el.classList.add('hidden'); el.style.display = 'none'; }
+    closeModal(id) { const el = document.getElementById(id); if (!el) return; el.classList.add('hidden'); el.style.display = ''; }
 
     // ===== Save / Load =====
     saveItinerary() {
