@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org; connect-src 'self' https://*.tile.openstreetmap.org; frame-src 'none';">
+    <title>TravelGo - 智慧旅遊規劃</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF8FA3">
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TravelGo">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- 啟動畫面 -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-icon">🐻</div>
+            <h1>TravelGo</h1>
+            <p>可愛動物帶你去旅行</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <!-- 主應用 -->
+    <div id="app" class="app hidden">
+        <!-- 頂部導航 -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>TravelGo</span>
+            </div>
+            <div class="top-bar-right">
+                <button id="btn-save-trip" class="icon-btn" title="儲存行程">
+                    <i class="fas fa-save"></i>
+                </button>
+                <button id="btn-load-trip" class="icon-btn" title="載入行程">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ====== STEP 1: 旅遊設定 ====== -->
+        <section id="setup-section" class="section setup-section">
+            <div class="setup-hero">
+                <div class="hero-bg-animation"></div>
+                <div class="hero-animals">
+                    <span class="animal-float">🐱</span>
+                    <span class="animal-float">🐶</span>
+                    <span class="animal-float">🐰</span>
+                    <span class="animal-float">🦊</span>
+                </div>
+                <div class="hero-overlay">
+                    <h2>和小動物一起出發吧</h2>
+                    <p>選擇目的地，可愛夥伴幫你安排最棒行程</p>
+                </div>
+            </div>
+
+            <!-- 目的地 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-map-pin"></i> 目的地</h3>
+                <div class="destination-selector">
+                    <div class="dest-tabs">
+                        <button class="dest-tab active" data-dest-mode="select">選擇縣市</button>
+                        <button class="dest-tab" data-dest-mode="custom">自行輸入</button>
+                    </div>
+                    <div id="dest-select-mode" class="dest-mode active">
+                        <div class="city-grid" id="city-grid"></div>
+                    </div>
+                    <div id="dest-custom-mode" class="dest-mode">
+                        <input type="text" id="custom-destination" class="input-field" placeholder="輸入地點名稱（如：日月潭、阿里山...）">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 日期 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-calendar-alt"></i> 旅遊日期</h3>
+                <div class="date-config">
+                    <div class="date-row">
+                        <div class="date-item">
+                            <label>出發日期</label>
+                            <input type="date" id="start-date" class="input-field">
+                        </div>
+                        <div class="date-item">
+                            <label>天數</label>
+                            <div class="day-selector">
+                                <button class="day-btn" data-days="2">2天1夜</button>
+                                <button class="day-btn" data-days="3">3天2夜</button>
+                                <button class="day-btn active" data-days="4">4天3夜</button>
+                                <button class="day-btn" data-days="5">5天4夜</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="custom-days-row">
+                        <label>自訂天數</label>
+                        <div class="custom-days-input">
+                            <button id="days-minus" class="stepper-btn">-</button>
+                            <input type="number" id="custom-days" class="stepper-input" value="4" min="1" max="14">
+                            <button id="days-plus" class="stepper-btn">+</button>
+                            <span class="days-label" id="days-label">天 3 夜</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 人數與預算 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-users"></i> 人數與預算</h3>
+                <div class="config-row">
+                    <div class="config-item">
+                        <label>旅遊人數</label>
+                        <select id="people-select" class="input-field">
+                            <option value="1">1 人</option>
+                            <option value="2" selected>2 人</option>
+                            <option value="3">3 人</option>
+                            <option value="4">4 人</option>
+                            <option value="5">5 人</option>
+                            <option value="6">6 人以上</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>每人預算（不含交通）</label>
+                        <select id="budget-select" class="input-field">
+                            <option value="low">省錢 (3000以下)</option>
+                            <option value="mid" selected>中等 (3000-10000)</option>
+                            <option value="high">高級 (10000以上)</option>
+                            <option value="luxury">奢華 (20000以上)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 每日行程設定 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-list-ol"></i> 每日行程設定</h3>
+                <div class="daily-settings">
+                    <div class="daily-setting-item">
+                        <label>每日景點數量</label>
+                        <div class="custom-days-input">
+                            <button id="attr-minus" class="stepper-btn">-</button>
+                            <input type="number" id="attractions-per-day" class="stepper-input" value="3" min="1" max="5">
+                            <button id="attr-plus" class="stepper-btn">+</button>
+                            <span class="days-label" id="attr-label">個景點/天</span>
+                        </div>
+                    </div>
+                    <div class="meal-budget-section">
+                        <label style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.5rem;display:block">每餐預算 (每人)</label>
+                        <div class="meal-budget-grid">
+                            <div class="meal-budget-item">
+                                <span class="meal-label"><i class="fas fa-sun"></i> 早餐</span>
+                                <div class="meal-input-wrap">
+                                    <span class="meal-currency">NT$</span>
+                                    <input type="number" id="meal-breakfast" class="input-field meal-input" value="150" min="0" step="50">
+                                </div>
+                            </div>
+                            <div class="meal-budget-item">
+                                <span class="meal-label"><i class="fas fa-cloud-sun"></i> 午餐</span>
+                                <div class="meal-input-wrap">
+                                    <span class="meal-currency">NT$</span>
+                                    <input type="number" id="meal-lunch" class="input-field meal-input" value="300" min="0" step="50">
+                                </div>
+                            </div>
+                            <div class="meal-budget-item">
+                                <span class="meal-label"><i class="fas fa-moon"></i> 晚餐</span>
+                                <div class="meal-input-wrap">
+                                    <span class="meal-currency">NT$</span>
+                                    <input type="number" id="meal-dinner" class="input-field meal-input" value="500" min="0" step="50">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 交通方式 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-train"></i> 前往交通方式</h3>
+                <div class="transport-select-grid" id="transport-select-grid"></div>
+            </div>
+
+            <!-- 固定住宿 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-hotel"></i> 住宿選擇（行程以此為中心規劃）</h3>
+                <div class="hotel-filter-row">
+                    <div class="filter-group">
+                        <label>價格範圍</label>
+                        <select id="hotel-price-filter" class="input-field">
+                            <option value="all">全部</option>
+                            <option value="budget">平價 (2000以下)</option>
+                            <option value="mid">中等 (2000-5000)</option>
+                            <option value="high">高級 (5000以上)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>評分</label>
+                        <select id="hotel-rating-filter" class="input-field">
+                            <option value="0">全部</option>
+                            <option value="4">4星以上</option>
+                            <option value="4.5">4.5星以上</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>訂房比價</label>
+                        <select id="booking-platform" class="input-field">
+                            <option value="all">全部平台</option>
+                            <option value="agoda">Agoda</option>
+                            <option value="booking">Booking.com</option>
+                            <option value="trip">Trip.com</option>
+                            <option value="trivago">Trivago</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="hotel-list" class="hotel-select-list"></div>
+
+                <!-- 自行填入住宿 -->
+                <div class="custom-hotel-section">
+                    <h4 class="custom-hotel-title"><i class="fas fa-plus-circle"></i> 自行填入住宿</h4>
+                    <div class="custom-hotel-form">
+                        <div class="custom-hotel-row">
+                            <div class="custom-hotel-field">
+                                <label>住宿名稱 *</label>
+                                <input type="text" id="custom-hotel-name" class="input-field" placeholder="如：花蓮小旅舍">
+                            </div>
+                            <div class="custom-hotel-field">
+                                <label>地址</label>
+                                <input type="text" id="custom-hotel-address" class="input-field" placeholder="如：花蓮縣花蓮市...">
+                            </div>
+                        </div>
+                        <div class="custom-hotel-row">
+                            <div class="custom-hotel-field">
+                                <label>每晚價格 (NT$) *</label>
+                                <input type="number" id="custom-hotel-price" class="input-field" placeholder="2000" min="0">
+                            </div>
+                            <div class="custom-hotel-field">
+                                <label>評分 (1-5)</label>
+                                <input type="number" id="custom-hotel-rating" class="input-field" placeholder="4.0" min="1" max="5" step="0.1">
+                            </div>
+                        </div>
+                        <div class="custom-hotel-row">
+                            <div class="custom-hotel-field">
+                                <label>緯度 (選填)</label>
+                                <input type="number" id="custom-hotel-lat" class="input-field" placeholder="23.9871" step="0.0001">
+                            </div>
+                            <div class="custom-hotel-field">
+                                <label>經度 (選填)</label>
+                                <input type="number" id="custom-hotel-lng" class="input-field" placeholder="121.6016" step="0.0001">
+                            </div>
+                        </div>
+                        <button class="btn-primary-sm btn-custom-hotel" onclick="app.addCustomHotel()">
+                            <i class="fas fa-plus"></i> 使用此住宿
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YouTube 導入 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fab fa-youtube" style="color:#ff0000"></i> YouTube 旅遊影片</h3>
+                <div class="yt-section">
+                    <div class="yt-input-row">
+                        <input type="text" id="youtube-url" class="input-field" placeholder="貼上 YouTube 旅遊影片網址，自動擷取行程建議...">
+                        <button id="btn-parse-yt" class="btn-primary-sm"><i class="fas fa-download"></i> 擷取</button>
+                    </div>
+                    <div id="yt-parsed-result" class="yt-parsed-result"></div>
+                    <div class="yt-recommend-section">
+                        <label style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.4rem;display:block">
+                            <i class="fas fa-film"></i> 相關旅遊影片推薦
+                        </label>
+                        <div id="yt-recommend-list" class="yt-recommend-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 景點偏好 -->
+            <div class="setup-card glass-card">
+                <h3 class="setup-title"><i class="fas fa-sliders-h"></i> 景點篩選偏好</h3>
+                <div class="preference-grid">
+                    <div class="pref-item">
+                        <label>最低評分</label>
+                        <div class="range-wrapper">
+                            <input type="range" id="pref-rating" min="3" max="5" step="0.1" value="4.0">
+                            <span id="pref-rating-val" class="range-val">4.0</span>
+                        </div>
+                    </div>
+                    <div class="pref-item">
+                        <label>每人餐費上限</label>
+                        <div class="range-wrapper">
+                            <input type="range" id="pref-meal-budget" min="50" max="2000" step="50" value="500">
+                            <span id="pref-meal-val" class="range-val">NT$500</span>
+                        </div>
+                    </div>
+                    <div class="pref-item">
+                        <label><input type="checkbox" id="pref-ticket" checked> 包含需要門票的景點</label>
+                    </div>
+                    <div class="pref-item">
+                        <label><input type="checkbox" id="pref-free" checked> 包含免費景點</label>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-generate-trip" class="btn-primary btn-full btn-lg">
+                <i class="fas fa-magic"></i> 🐾 自動產生最佳行程
+            </button>
+        </section>
+
+        <!-- ====== STEP 2: 行程結果 ====== -->
+        <section id="result-section" class="section hidden">
+            <!-- 行程頂部操作列 -->
+            <div class="result-toolbar">
+                <button id="btn-back-setup" class="btn-outline-sm">
+                    <i class="fas fa-arrow-left"></i> 重新設定
+                </button>
+                <div class="toolbar-actions">
+                    <button id="btn-edit-mode" class="btn-outline-sm">
+                        <i class="fas fa-edit"></i> 編輯行程
+                    </button>
+                    <button id="btn-save-itinerary" class="btn-outline-sm">
+                        <i class="fas fa-save"></i> 儲存
+                    </button>
+                    <button id="btn-export-pdf" class="btn-primary-sm">
+                        <i class="fas fa-file-pdf"></i> 匯出 PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- 行程摘要 -->
+            <div class="trip-summary" id="trip-summary"></div>
+
+            <!-- 分頁 -->
+            <nav class="tab-nav">
+                <button class="tab-btn active" data-tab="itinerary">
+                    <i class="fas fa-route"></i> 每日行程
+                </button>
+                <button class="tab-btn" data-tab="map-overview">
+                    <i class="fas fa-map"></i> 地圖總覽
+                </button>
+                <button class="tab-btn" data-tab="attractions">
+                    <i class="fas fa-camera"></i> 景點
+                </button>
+                <button class="tab-btn" data-tab="restaurants">
+                    <i class="fas fa-utensils"></i> 美食
+                </button>
+                <button class="tab-btn" data-tab="transport-detail">
+                    <i class="fas fa-train"></i> 交通
+                </button>
+                <button class="tab-btn" data-tab="youtube">
+                    <i class="fab fa-youtube"></i> 影片
+                </button>
+            </nav>
+
+            <!-- 地圖 -->
+            <section id="map-section" class="map-section">
+                <div id="map-container" class="map-container">
+                    <div id="map" class="map"></div>
+                    <div class="map-day-tabs" id="map-day-tabs"></div>
+                    <div class="map-controls">
+                        <button id="btn-toggle-map" class="map-ctrl-btn" title="展開/收起">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 內容 -->
+            <div id="tab-itinerary" class="tab-content active"></div>
+            <div id="tab-map-overview" class="tab-content"></div>
+            <div id="tab-attractions" class="tab-content"></div>
+            <div id="tab-restaurants" class="tab-content"></div>
+            <div id="tab-transport-detail" class="tab-content"></div>
+            <div id="tab-youtube" class="tab-content"></div>
+        </section>
+
+        <!-- 詳情彈窗 -->
+        <div id="detail-modal" class="modal hidden">
+            <div class="modal-content glass-modal">
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+                <div id="modal-body"></div>
+            </div>
+        </div>
+
+        <!-- 編輯行程彈窗 -->
+        <div id="edit-modal" class="modal hidden">
+            <div class="modal-content modal-wide glass-modal">
+                <button class="modal-close" id="edit-modal-close"><i class="fas fa-times"></i></button>
+                <div id="edit-modal-body"></div>
+            </div>
+        </div>
+
+        <!-- YouTube Player Modal (info card, no iframe) -->
+        <div id="yt-player-modal" class="modal hidden">
+            <div class="modal-content modal-wide glass-modal" style="max-width:520px">
+                <button class="modal-close" onclick="app.closeYTPlayer()"><i class="fas fa-times"></i></button>
+                <div id="yt-player-body" class="yt-info-card">
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast-container"></div>
+
+        <!-- 底部導航 -->
+        <nav class="bottom-nav" id="bottom-nav" style="display:none">
+            <button class="bottom-nav-btn active" data-tab="itinerary">
+                <i class="fas fa-route"></i><span>行程</span>
+            </button>
+            <button class="bottom-nav-btn" data-tab="map-overview">
+                <i class="fas fa-map"></i><span>地圖</span>
+            </button>
+            <button class="bottom-nav-btn" data-tab="attractions">
+                <i class="fas fa-camera"></i><span>景點</span>
+            </button>
+            <button class="bottom-nav-btn" data-tab="restaurants">
+                <i class="fas fa-utensils"></i><span>美食</span>
+            </button>
+            <button class="bottom-nav-btn" data-tab="transport-detail">
+                <i class="fas fa-train"></i><span>交通</span>
+            </button>
+            <button class="bottom-nav-btn" data-tab="youtube">
+                <i class="fab fa-youtube"></i><span>影片</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="js/data.js?v=7"></script>
+    <script src="js/map.js?v=7"></script>
+    <script src="js/app.js?v=7"></script>
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
