@@ -71,6 +71,18 @@ function rateLimited(actionKey, cooldownMs) {
     return false;
 }
 
+// F. Haptic Feedback
+function hapticFeedback(type = 'light') {
+    if (!navigator.vibrate) return;
+    switch(type) {
+        case 'light': navigator.vibrate(10); break;
+        case 'medium': navigator.vibrate(25); break;
+        case 'heavy': navigator.vibrate([30, 10, 30]); break;
+        case 'success': navigator.vibrate([10, 30, 10, 30, 50]); break;
+        case 'error': navigator.vibrate([50, 20, 50]); break;
+    }
+}
+
 // YouTube 推薦影片資料庫
 const YT_RECOMMENDATIONS = {
     hualien: [
@@ -131,7 +143,7 @@ class TravelApp {
                 this.mapManager = new MapManager();
                 this.setupAll();
             }, 500);
-        }, 1500);
+        }, 2500);
     }
 
     setupAll() {
@@ -158,6 +170,7 @@ class TravelApp {
         grid.addEventListener('click', (e) => {
             const btn = e.target.closest('.city-btn');
             if (!btn) return;
+            hapticFeedback('light');
             grid.querySelectorAll('.city-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             this.selectedCity = btn.dataset.city;
@@ -310,6 +323,7 @@ class TravelApp {
         container.querySelectorAll('.hotel-option').forEach(opt => {
             opt.addEventListener('click', (e) => {
                 if (e.target.classList.contains('price-input-inline')) return;
+                hapticFeedback('light');
                 const hid = opt.dataset.hotelId;
                 this.selectedHotel = data.hotels.find(h => h.id === hid);
                 container.querySelectorAll('.hotel-option').forEach(o => o.classList.remove('selected'));
@@ -535,6 +549,7 @@ class TravelApp {
     // ===== Generate Trip =====
     generateTrip() {
         if (rateLimited('generate', 3000)) { this.showToast('請稍候，不要重複點擊'); return; }
+        hapticFeedback('medium');
         if (!this.selectedHotel) { this.showToast('請先選擇住宿！'); return; }
         const sd = document.getElementById('start-date').value;
         if (!sd) { this.showToast('請選擇出發日期！'); return; }
@@ -1025,6 +1040,7 @@ class TravelApp {
         if (!this.generatedItinerary) { this.showToast('尚未產生行程'); return; }
         const d = { itinerary: this.generatedItinerary, selectedCity: this.selectedCity, selectedDays: this.selectedDays, startDate: this.startDate.toISOString(), selectedTransport: this.selectedTransport, selectedHotelId: this.selectedHotel?.id, attractionsPerDay: this.attractionsPerDay, mealBudgets: this.mealBudgets, savedAt: new Date().toISOString() };
         if (secureStore('travelgo_saved', d)) {
+            hapticFeedback('success');
             this.showToast('行程已儲存！');
         } else {
             this.showToast('儲存失敗，請稍後再試');
@@ -1060,6 +1076,7 @@ class TravelApp {
 
     // ===== Export PDF (page-by-page rendering to avoid content cut-off) =====
     async exportPDF() {
+        hapticFeedback('medium');
         if (rateLimited('exportPDF', 10000)) { this.showToast('PDF 正在產生中，請稍候'); return; }
         if (!this.generatedItinerary) { this.showToast('請先產生行程'); return; }
 
@@ -1276,6 +1293,7 @@ class TravelApp {
     formatDateFull(d) { if (!d) return ''; const x = new Date(d); return `${x.getFullYear()}/${x.getMonth()+1}/${x.getDate()}`; }
 
     showToast(msg) {
+        hapticFeedback('light');
         const old = document.querySelector('.toast'); if (old) old.remove();
         const t = document.createElement('div'); t.className = 'toast';
         t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(30,41,59,0.85);color:white;padding:0.5rem 1rem;border-radius:20px;font-size:0.85rem;z-index:9999;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:fadeInUp 0.3s;border:1px solid rgba(255,255,255,0.1)';
@@ -1285,6 +1303,34 @@ class TravelApp {
 }
 
 const app = new TravelApp();
+
+// ===== Intersection Observer for card entrance animations =====
+const animObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+            entry.target.style.animationDelay = `${i * 0.08}s`;
+            entry.target.classList.add('animate-in');
+            animObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.glass-card, .hotel-option, .city-card').forEach(el => {
+    animObserver.observe(el);
+});
+
+// ===== Button Ripple Effect =====
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-primary, .btn-generate, .day-btn, .tab-btn');
+    if (!btn) return;
+    const ripple = document.createElement('span');
+    ripple.classList.add('ripple-effect');
+    const rect = btn.getBoundingClientRect();
+    ripple.style.left = (e.clientX - rect.left) + 'px';
+    ripple.style.top = (e.clientY - rect.top) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+});
 
 // ===== PWA Install Prompt =====
 (function() {
