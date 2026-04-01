@@ -176,6 +176,7 @@ class TravelApp {
             grid.querySelectorAll('.city-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             this.selectedCity = btn.dataset.city;
+            this.selectedHotel = null;
             this.renderHotelList();
             this.renderTransportOptions();
             this.renderYTRecommendations();
