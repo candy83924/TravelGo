@@ -1591,6 +1591,46 @@ class TravelApp {
         return true;
     }
 
+    /** 顯示 Google API Key 設定面板 */
+    showGPSettings() {
+        const currentKey = localStorage.getItem('travelgo_gp_key') || '';
+        const maskedKey = currentKey ? currentKey.substring(0, 8) + '••••••••' + currentKey.substring(currentKey.length - 4) : '尚未設定';
+        const modal = document.getElementById('detail-modal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        document.getElementById('modal-body').innerHTML = `
+            <h3 style="margin-bottom:1rem"><i class="fas fa-key"></i> Google Places API 設定</h3>
+            <div style="margin-bottom:1rem;padding:0.8rem;background:var(--bg);border-radius:var(--radius-sm)">
+                <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">目前金鑰</div>
+                <div style="font-size:0.85rem;font-family:monospace;color:var(--text)">${maskedKey}</div>
+            </div>
+            <input type="text" id="gp-api-key-input" class="input-field" placeholder="貼上新的 API Key" style="margin-bottom:0.5rem;font-family:monospace">
+            <p style="font-size:0.75rem;color:var(--text-light);margin-bottom:1rem">
+                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--primary)">👉 前往 Google Cloud Console 取得 API Key</a><br>
+                需啟用: Places API (New)
+            </p>
+            <div style="display:flex;gap:0.5rem">
+                <button class="btn-primary" onclick="app._saveGoogleApiKey()" style="flex:1;border:none;padding:0.7rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.9rem">
+                    <i class="fas fa-check"></i> 儲存新金鑰
+                </button>
+                ${currentKey ? `<button onclick="app._clearGoogleApiKey()" style="flex:1;padding:0.7rem;border:1px solid #ef4444;color:#ef4444;border-radius:var(--radius-sm);cursor:pointer;font-size:0.9rem;background:transparent">
+                    <i class="fas fa-trash"></i> 清除金鑰
+                </button>` : ''}
+            </div>
+            <button onclick="app.closeModal('detail-modal')" style="width:100%;margin-top:0.5rem;padding:0.6rem;border:1px solid var(--border-solid);border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;background:var(--bg-card)">取消</button>
+        `;
+    }
+
+    _clearGoogleApiKey() {
+        localStorage.removeItem('travelgo_gp_key');
+        this.googleApiKey = '';
+        window.placesService.apiKey = '';
+        window.placesService.isLoaded = false;
+        window.placesService.clearCache();
+        this.closeModal('detail-modal');
+        this.showToast('API Key 已清除');
+    }
+
     async _saveGoogleApiKey() {
         const key = document.getElementById('gp-api-key-input')?.value?.trim();
         if (!key) { this.showToast('請輸入 API Key'); return; }
