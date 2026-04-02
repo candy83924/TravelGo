@@ -1,4 +1,4 @@
-// ===== TravelGo App v7 =====
+// ===== TravelGo App v8 - Google Places Integration =====
 
 // ===== Security Utilities =====
 
@@ -128,6 +128,8 @@ class TravelApp {
         this.attractionsPerDay = 3;
         this.mealBudgets = { breakfast: 150, lunch: 300, dinner: 500 };
         this.perDayTimes = [];
+        this.googleApiKey = '';
+        this._googleSearchResults = []; // 暫存 Google 搜尋結果
         this.init();
     }
 
@@ -329,6 +331,24 @@ class TravelApp {
         const data = getDestData(this.selectedCity);
         if (!data?.hotels) { container.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:1rem">此目的地住宿資料建置中</p>'; return; }
 
+        // 在住宿列表上方插入 Google 搜尋（只插入一次）
+        let searchWrap = document.getElementById('gp-hotel-search-wrap');
+        if (!searchWrap) {
+            searchWrap = document.createElement('div');
+            searchWrap.id = 'gp-hotel-search-wrap';
+            searchWrap.innerHTML = `
+                <div class="gp-search-section" style="margin-bottom:0.8rem">
+                    <div class="gp-search-bar">
+                        <i class="fas fa-search gp-search-icon"></i>
+                        <input type="text" id="gp-search-hotels" class="input-field gp-search-input" placeholder="🔍 搜尋 Google 地圖上的住宿...">
+                        <button class="gp-search-btn" onclick="app.doGoogleSearch('hotels')"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="gp-results-hotels" class="gp-results-container"></div>
+                </div>`;
+            container.parentNode.insertBefore(searchWrap, container);
+            document.getElementById('gp-search-hotels')?.addEventListener('keypress', e => { if(e.key==='Enter') app.doGoogleSearch('hotels'); });
+        }
+
         const priceFilter = document.getElementById('hotel-price-filter')?.value || 'all';
         const ratingFilter = parseFloat(document.getElementById('hotel-rating-filter')?.value || '0');
 
@@ -360,8 +380,10 @@ class TravelApp {
                 if (e.target.classList.contains('price-input-inline')) return;
                 hapticFeedback('light');
                 const hid = opt.dataset.hotelId;
-                this.selectedHotel = data.hotels.find(h => h.id === hid);
+                this.selectedHotel = data.hotels.find(h => h.id === hid) || this._googleHotels?.find(h => h.id === hid);
                 container.querySelectorAll('.hotel-option').forEach(o => o.classList.remove('selected'));
+                // Also deselect Google hotel results
+                document.querySelectorAll('#gp-results-hotels .hotel-option').forEach(o => o.classList.remove('selected'));
                 opt.classList.add('selected');
             });
         });
@@ -1128,8 +1150,19 @@ class TravelApp {
     renderAttractions() {
         const c = document.getElementById('tab-attractions');
         const data = getDestData(this.selectedCity);
-        c.innerHTML = `<div class="section-header"><h3><i class="fas fa-fire"></i> ${data.name}景點推薦</h3></div>
+        c.innerHTML = `
+            <div class="gp-search-section">
+                <div class="gp-search-bar">
+                    <i class="fas fa-search gp-search-icon"></i>
+                    <input type="text" id="gp-search-attractions" class="input-field gp-search-input" placeholder="🔍 搜尋 Google 地圖上的任何景點...">
+                    <button class="gp-search-btn" onclick="app.doGoogleSearch('attractions')"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="gp-results-attractions" class="gp-results-container"></div>
+            </div>
+            <div class="section-header"><h3><i class="fas fa-fire"></i> ${data.name}精選推薦</h3></div>
             <div class="card-list">${data.attractions.map((a,i) => this.renderAttractionCard(a,i)).join('')}</div>`;
+        // Enter key 搜尋
+        document.getElementById('gp-search-attractions')?.addEventListener('keypress', e => { if(e.key==='Enter') app.doGoogleSearch('attractions'); });
     }
 
     renderAttractionCard(a, i) {
@@ -1160,8 +1193,18 @@ class TravelApp {
     renderRestaurants() {
         const c = document.getElementById('tab-restaurants');
         const data = getDestData(this.selectedCity);
-        c.innerHTML = `<div class="section-header"><h3><i class="fas fa-star"></i> ${data.name}美食推薦</h3></div>
+        c.innerHTML = `
+            <div class="gp-search-section">
+                <div class="gp-search-bar">
+                    <i class="fas fa-search gp-search-icon"></i>
+                    <input type="text" id="gp-search-restaurants" class="input-field gp-search-input" placeholder="🔍 搜尋 Google 地圖上的任何餐廳...">
+                    <button class="gp-search-btn" onclick="app.doGoogleSearch('restaurants')"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="gp-results-restaurants" class="gp-results-container"></div>
+            </div>
+            <div class="section-header"><h3><i class="fas fa-star"></i> ${data.name}精選推薦</h3></div>
             <div class="card-list">${data.restaurants.map((r,i) => this.renderRestaurantCard(r,i)).join('')}</div>`;
+        document.getElementById('gp-search-restaurants')?.addEventListener('keypress', e => { if(e.key==='Enter') app.doGoogleSearch('restaurants'); });
     }
 
     renderRestaurantCard(r, i) {
@@ -1374,6 +1417,8 @@ class TravelApp {
 
         const availableAttractions = data.attractions.filter(a => !existingTitles.has(a.name));
         const availableRestaurants = data.restaurants.filter(r => !existingTitles.has(r.name));
+        this._addItemDayIdx = dayIdx;
+        this._addItemSelectedGP = null;
 
         const modal = document.getElementById('detail-modal');
         modal.classList.remove('hidden');
@@ -1387,9 +1432,10 @@ class TravelApp {
             <div style="margin-bottom:1rem">
                 <label class="form-label" style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">類型</label>
                 <select id="new-item-type" class="input-field" onchange="app.toggleAddItemType()">
-                    <option value="attraction">景點</option>
-                    <option value="meal">餐廳</option>
-                    <option value="custom">自訂</option>
+                    <option value="attraction">景點（精選）</option>
+                    <option value="meal">餐廳（精選）</option>
+                    <option value="google">🔍 Google 地圖搜尋</option>
+                    <option value="custom">✏️ 自訂</option>
                 </select>
             </div>
             <div id="add-item-preset" style="margin-bottom:1rem">
@@ -1404,24 +1450,41 @@ class TravelApp {
                 <label class="form-label" style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem">說明</label>
                 <input type="text" id="new-item-desc" class="input-field" placeholder="簡短說明（選填）">
             </div>
+            <div id="add-item-google" style="display:none;margin-bottom:1rem">
+                <div class="gp-search-bar" style="margin-bottom:0.5rem">
+                    <input type="text" id="gp-modal-search" class="input-field gp-search-input" placeholder="搜尋任何地點、餐廳、景點...">
+                    <button class="gp-search-btn" onclick="app.doModalGoogleSearch()"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="gp-modal-results" class="gp-modal-results"></div>
+            </div>
             <button class="btn-primary" onclick="app.confirmAddItem(${dayIdx})" style="width:100%;border:none;padding:0.7rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.9rem">
                 <i class="fas fa-check"></i> 加入行程
             </button>
         `;
+        // Enter key for Google search in modal
+        setTimeout(() => {
+            document.getElementById('gp-modal-search')?.addEventListener('keypress', e => { if(e.key==='Enter') app.doModalGoogleSearch(); });
+        }, 100);
     }
 
     toggleAddItemType() {
         const type = document.getElementById('new-item-type').value;
         const presetDiv = document.getElementById('add-item-preset');
         const customDiv = document.getElementById('add-item-custom');
+        const googleDiv = document.getElementById('add-item-google');
         const select = document.getElementById('new-item-select');
 
+        presetDiv.style.display = 'none';
+        customDiv.style.display = 'none';
+        googleDiv.style.display = 'none';
+        this._addItemSelectedGP = null;
+
         if (type === 'custom') {
-            presetDiv.style.display = 'none';
             customDiv.style.display = 'block';
+        } else if (type === 'google') {
+            googleDiv.style.display = 'block';
         } else {
             presetDiv.style.display = 'block';
-            customDiv.style.display = 'none';
             const data = getDestData(this.selectedCity);
             const existingTitles = new Set();
             this.generatedItinerary.days.forEach(d => d.items.forEach(i => existingTitles.add(i.title)));
@@ -1444,6 +1507,17 @@ class TravelApp {
             const title = document.getElementById('new-item-title')?.value?.trim();
             if (!title) { this.showToast('請輸入活動名稱'); return; }
             newItem = { time, title: sanitizeHTML(title), desc: sanitizeHTML(document.getElementById('new-item-desc')?.value || ''), type: 'custom', cost: 0 };
+        } else if (type === 'google') {
+            if (!this._addItemSelectedGP) { this.showToast('請先搜尋並選擇一個地點'); return; }
+            const gp = this._addItemSelectedGP;
+            newItem = {
+                time,
+                title: gp.name,
+                type: gp._appType || 'attraction',
+                desc: gp.description || gp.type || '',
+                spotData: gp,
+                cost: gp.ticket || gp.price || 0
+            };
         } else {
             const name = document.getElementById('new-item-select')?.value;
             const data = getDestData(this.selectedCity);
@@ -1471,6 +1545,230 @@ class TravelApp {
     }
 
     closeModal(id) { const el = document.getElementById(id); if (!el) return; el.classList.add('hidden'); el.style.display = ''; }
+
+    // ===== Google Places 搜尋功能 =====
+
+    async _ensureGooglePlaces() {
+        if (!this.googleApiKey) {
+            // 嘗試從 localStorage 讀取
+            this.googleApiKey = localStorage.getItem('travelgo_gp_key') || '';
+        }
+        if (!this.googleApiKey) {
+            // 顯示 API Key 輸入對話框
+            return new Promise((resolve) => {
+                const modal = document.getElementById('detail-modal');
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+                document.getElementById('modal-body').innerHTML = `
+                    <h3 style="margin-bottom:1rem"><i class="fab fa-google"></i> 設定 Google Places API</h3>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.5">
+                        要使用 Google 地圖搜尋功能，需要提供 Google Places API Key。<br>
+                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--primary)">👉 前往 Google Cloud Console 取得 API Key</a>
+                    </p>
+                    <p style="font-size:0.75rem;color:var(--text-light);margin-bottom:1rem">
+                        需啟用: Places API (New)。每月有免費額度。
+                    </p>
+                    <input type="text" id="gp-api-key-input" class="input-field" placeholder="貼上你的 API Key" style="margin-bottom:1rem;font-family:monospace">
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn-primary" onclick="app._saveGoogleApiKey()" style="flex:1;border:none;padding:0.7rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.9rem">
+                            <i class="fas fa-check"></i> 儲存
+                        </button>
+                        <button class="btn-secondary" onclick="app.closeModal('detail-modal')" style="flex:1;border:1px solid var(--border-solid);padding:0.7rem;border-radius:var(--radius-sm);cursor:pointer;font-size:0.9rem;background:var(--bg-card)">
+                            取消
+                        </button>
+                    </div>
+                `;
+                this._gpKeyResolve = resolve;
+            });
+        }
+        // 初始化 service
+        window.placesService.apiKey = this.googleApiKey;
+        const ok = await window.placesService.init();
+        if (!ok) {
+            this.showToast('Google Places API 載入失敗，請檢查 API Key');
+            return false;
+        }
+        return true;
+    }
+
+    async _saveGoogleApiKey() {
+        const key = document.getElementById('gp-api-key-input')?.value?.trim();
+        if (!key) { this.showToast('請輸入 API Key'); return; }
+        this.googleApiKey = key;
+        localStorage.setItem('travelgo_gp_key', key);
+        this.closeModal('detail-modal');
+        this.showToast('API Key 已儲存！');
+        if (this._gpKeyResolve) {
+            this._gpKeyResolve(true);
+            this._gpKeyResolve = null;
+        }
+    }
+
+    /** 景點/餐廳/住宿頁面的 Google 搜尋 */
+    async doGoogleSearch(tabType) {
+        const inputId = `gp-search-${tabType}`;
+        const resultId = `gp-results-${tabType}`;
+        const query = document.getElementById(inputId)?.value?.trim();
+        if (!query) { this.showToast('請輸入搜尋關鍵字'); return; }
+
+        const ok = await this._ensureGooglePlaces();
+        if (!ok) return;
+
+        const resultContainer = document.getElementById(resultId);
+        resultContainer.innerHTML = '<div class="gp-loading"><i class="fas fa-spinner fa-spin"></i> 搜尋中...</div>';
+
+        try {
+            const data = getDestData(this.selectedCity);
+            const location = data?.center || null;
+            const typeFilter = tabType === 'restaurants' ? 'restaurant' : (tabType === 'hotels' ? 'hotel' : '');
+
+            const results = await window.placesService.searchPlaces(query, location, typeFilter, 10);
+
+            if (!results || results.length === 0) {
+                resultContainer.innerHTML = '<div class="gp-no-results"><i class="fas fa-search"></i> 找不到相關結果</div>';
+                return;
+            }
+
+            if (tabType === 'hotels') {
+                this._googleHotels = results.map(r => window.placesService.formatAsHotel(r));
+                resultContainer.innerHTML = `
+                    <div class="gp-results-label"><i class="fab fa-google"></i> Google 搜尋結果</div>
+                    ${this._googleHotels.map(h => {
+                        const sel = this.selectedHotel?.id === h.id;
+                        return `<div class="hotel-option gp-hotel ${sel?'selected':''}" data-hotel-id="${h.id}">
+                            <div class="hotel-thumb" style="background-image:url('${h.image}')">
+                                <span class="gp-badge">Google</span>
+                            </div>
+                            <div class="hotel-info">
+                                <div class="hotel-name">${h.name} <span style="color:#fbbf24">★</span> ${h.rating || '-'}</div>
+                                <div class="hotel-meta">${h.type} · ${h.address}</div>
+                                <div class="hotel-meta" style="font-size:0.7rem;color:var(--text-light)">價格請至訂房平台查詢</div>
+                            </div>
+                        </div>`;
+                    }).join('')}`;
+                // 綁定點擊事件
+                resultContainer.querySelectorAll('.hotel-option').forEach(opt => {
+                    opt.addEventListener('click', () => {
+                        const hid = opt.dataset.hotelId;
+                        this.selectedHotel = this._googleHotels.find(h => h.id === hid);
+                        document.querySelectorAll('.hotel-option').forEach(o => o.classList.remove('selected'));
+                        opt.classList.add('selected');
+                        hapticFeedback('light');
+                        this.showToast(`已選擇: ${this.selectedHotel.name}`);
+                    });
+                });
+            } else {
+                this._googleSearchResults = results;
+                resultContainer.innerHTML = `
+                    <div class="gp-results-label"><i class="fab fa-google"></i> Google 搜尋結果</div>
+                    <div class="card-list gp-card-list">${results.map((r, i) => this._renderGPCard(r, i)).join('')}</div>`;
+            }
+        } catch (err) {
+            console.error('Google search error:', err);
+            resultContainer.innerHTML = `<div class="gp-error"><i class="fas fa-exclamation-circle"></i> 搜尋失敗: ${err.message || '請稍後再試'}</div>`;
+        }
+    }
+
+    /** 新增項目 Modal 內的 Google 搜尋 */
+    async doModalGoogleSearch() {
+        const query = document.getElementById('gp-modal-search')?.value?.trim();
+        if (!query) { this.showToast('請輸入搜尋關鍵字'); return; }
+
+        const ok = await this._ensureGooglePlaces();
+        if (!ok) return;
+
+        const container = document.getElementById('gp-modal-results');
+        container.innerHTML = '<div class="gp-loading"><i class="fas fa-spinner fa-spin"></i> 搜尋中...</div>';
+
+        try {
+            const data = getDestData(this.selectedCity);
+            const results = await window.placesService.searchPlaces(query, data?.center, '', 8);
+
+            if (!results || results.length === 0) {
+                container.innerHTML = '<div class="gp-no-results"><i class="fas fa-search"></i> 找不到相關結果</div>';
+                return;
+            }
+
+            this._modalSearchResults = results;
+            container.innerHTML = results.map((r, i) => `
+                <div class="gp-modal-item ${this._addItemSelectedGP?.id === r.id ? 'selected' : ''}" data-idx="${i}" onclick="app._selectModalGP(${i})">
+                    <img class="gp-modal-thumb" src="${r.image}" alt="" onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop'">
+                    <div class="gp-modal-info">
+                        <div class="gp-modal-name">${sanitizeHTML(r.name)}</div>
+                        <div class="gp-modal-meta">${r.type} ${r.rating ? '· ★'+r.rating : ''}</div>
+                        <div class="gp-modal-addr">${sanitizeHTML(r.address)}</div>
+                    </div>
+                    <i class="fas fa-check-circle gp-modal-check"></i>
+                </div>
+            `).join('');
+        } catch (err) {
+            container.innerHTML = `<div class="gp-error"><i class="fas fa-exclamation-circle"></i> ${err.message || '搜尋失敗'}</div>`;
+        }
+    }
+
+    _selectModalGP(idx) {
+        this._addItemSelectedGP = this._modalSearchResults?.[idx] || null;
+        document.querySelectorAll('.gp-modal-item').forEach((el, i) => {
+            el.classList.toggle('selected', i === idx);
+        });
+        if (this._addItemSelectedGP) {
+            this.showToast(`已選擇: ${this._addItemSelectedGP.name}`);
+        }
+    }
+
+    /** 渲染 Google Places 搜尋結果卡片 (景點/餐廳頁面用) */
+    _renderGPCard(place, i) {
+        return `<div class="card gp-card" onclick="app.showGPDetail('${place.id}')" style="animation-delay:${i*0.05}s">
+            <div class="card-image" style="background-image:url('${place.image}')">
+                <span class="card-badge gp-badge-card">Google</span>
+                <span class="card-badge">${place.type}</span>
+                ${place.rating ? `<span class="card-rating-badge"><i class="fas fa-star"></i> ${place.rating}</span>` : ''}
+            </div>
+            <div class="card-body">
+                <div class="card-title">${sanitizeHTML(place.name)}</div>
+                <div class="card-subtitle"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(place.address)}</div>
+                <div class="card-meta">
+                    ${place.reviews ? `<span class="card-meta-item"><i class="fas fa-comment"></i> ${(place.reviews/1000).toFixed(1)}K</span>` : ''}
+                    <span class="card-price">${place.priceLevel}</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="card-tags"><span class="tag" style="background:rgba(66,133,244,0.1);color:#4285f4">Google Places</span></div>
+                <a href="https://www.google.com/maps/place/?q=place_id:${place._placeId}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> Google Maps</a>
+            </div>
+        </div>`;
+    }
+
+    /** 顯示 Google Place 詳情 */
+    showGPDetail(placeId) {
+        const place = this._googleSearchResults?.find(r => r.id === placeId);
+        if (!place) return;
+
+        const modal = document.getElementById('detail-modal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        document.getElementById('modal-body').innerHTML = `
+            <div class="detail-hero" style="background-image:url('${place.image}');height:180px;background-size:cover;background-position:center;border-radius:var(--radius-md);margin:-1rem -1rem 1rem;position:relative">
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem;background:linear-gradient(transparent,rgba(0,0,0,0.7));color:white;border-radius:0 0 var(--radius-md) var(--radius-md)">
+                    <h3 style="margin:0">${sanitizeHTML(place.name)}</h3>
+                    <p style="margin:0.2rem 0 0;font-size:0.85rem;opacity:0.9">${place.type} ${place.rating ? '· ★'+place.rating+' ('+place.reviews+'則評論)' : ''}</p>
+                </div>
+                <span class="gp-badge" style="position:absolute;top:0.5rem;right:0.5rem">Google</span>
+            </div>
+            <div style="margin-bottom:0.8rem"><i class="fas fa-map-marker-alt" style="color:var(--primary);margin-right:0.3rem"></i> ${sanitizeHTML(place.address)}</div>
+            ${place.hours ? `<div style="margin-bottom:0.8rem;font-size:0.8rem;color:var(--text-secondary)"><i class="fas fa-clock" style="margin-right:0.3rem"></i> ${sanitizeHTML(place.hours.substring(0,100))}...</div>` : ''}
+            ${place.description ? `<p style="margin-bottom:0.8rem;font-size:0.85rem;color:var(--text-secondary)">${sanitizeHTML(place.description)}</p>` : ''}
+            ${place._websiteUrl ? `<a href="${place._websiteUrl}" target="_blank" style="display:inline-block;margin-bottom:0.8rem;color:var(--primary);font-size:0.85rem"><i class="fas fa-globe"></i> 官方網站</a>` : ''}
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+                <a href="https://www.google.com/maps/place/?q=place_id:${place._placeId}" target="_blank" style="flex:1;text-align:center;padding:0.6rem;background:#4285f4;color:white;border-radius:var(--radius-sm);text-decoration:none;font-size:0.85rem">
+                    <i class="fab fa-google"></i> 在 Google Maps 查看
+                </a>
+                <button onclick="app.closeModal('detail-modal')" style="flex:1;padding:0.6rem;border:1px solid var(--border-solid);border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;background:var(--bg-card)">
+                    關閉
+                </button>
+            </div>
+        `;
+    }
 
     // ===== Save / Load =====
     saveItinerary() {

@@ -38,9 +38,10 @@ self.addEventListener('activate', (event) => {
 
 // Fetch: network first, fall back to cache
 self.addEventListener('fetch', (event) => {
-    // Skip non-GET requests and chrome-extension
+    // Skip non-GET requests, chrome-extension, and Google API calls
     if (event.request.method !== 'GET') return;
     if (event.request.url.startsWith('chrome-extension')) return;
+    if (event.request.url.includes('googleapis.com') || event.request.url.includes('gstatic.com')) return;
 
     event.respondWith(
         fetch(event.request)

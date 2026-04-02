@@ -1441,6 +1441,91 @@ body {
     .ai-chat-fab { bottom: 74px; right: 12px; width: 50px; height: 50px; font-size: 1.2rem; }
 }
 
+/* ===== Google Places Search Styles ===== */
+.gp-search-section { margin-bottom: 1rem; }
+.gp-search-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--bg-card); border: 2px solid var(--border-soft);
+    border-radius: var(--radius-md); padding: 0.3rem 0.5rem;
+    transition: border-color 0.2s;
+}
+.gp-search-bar:focus-within { border-color: #4285f4; }
+.gp-search-icon { color: var(--text-light); font-size: 0.9rem; }
+.gp-search-input {
+    flex: 1; border: none !important; background: transparent !important;
+    padding: 0.5rem 0.3rem !important; font-size: 0.9rem;
+    outline: none;
+}
+.gp-search-btn {
+    background: #4285f4; color: white; border: none;
+    border-radius: var(--radius-sm); padding: 0.5rem 0.8rem;
+    cursor: pointer; font-size: 0.85rem; transition: background 0.2s;
+    white-space: nowrap;
+}
+.gp-search-btn:hover { background: #3367d6; }
+.gp-search-btn:active { transform: scale(0.95); }
+
+.gp-results-container { margin-top: 0.8rem; }
+.gp-results-label {
+    font-size: 0.8rem; color: #4285f4; font-weight: 600;
+    margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;
+}
+.gp-loading, .gp-no-results, .gp-error {
+    text-align: center; padding: 1.5rem; color: var(--text-light);
+    font-size: 0.85rem;
+}
+.gp-error { color: #ef4444; }
+.gp-loading i { color: #4285f4; font-size: 1.2rem; margin-right: 0.3rem; }
+
+.gp-badge {
+    background: #4285f4; color: white; font-size: 0.6rem; font-weight: 700;
+    padding: 0.15rem 0.4rem; border-radius: 4px; letter-spacing: 0.5px;
+}
+.gp-badge-card {
+    background: #4285f4 !important; color: white !important;
+    position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
+}
+.gp-card { border: 1px solid rgba(66,133,244,0.15); }
+.gp-card:hover { border-color: rgba(66,133,244,0.3); }
+
+.gp-card-list { margin-top: 0.5rem; }
+
+/* Google Hotel results */
+.gp-hotel .hotel-thumb { position: relative; }
+.gp-hotel .gp-badge { position: absolute; top: 0.3rem; left: 0.3rem; }
+
+/* Modal Google Search */
+.gp-modal-results {
+    max-height: 250px; overflow-y: auto; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft);
+}
+.gp-modal-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem; cursor: pointer; transition: background 0.15s;
+    border-bottom: 1px solid var(--border-soft);
+}
+.gp-modal-item:last-child { border-bottom: none; }
+.gp-modal-item:hover { background: var(--bg-hover); }
+.gp-modal-item.selected { background: rgba(66,133,244,0.08); }
+.gp-modal-item.selected .gp-modal-check { display: block; color: #4285f4; }
+.gp-modal-thumb {
+    width: 48px; height: 48px; border-radius: var(--radius-sm);
+    object-fit: cover; flex-shrink: 0;
+}
+.gp-modal-info { flex: 1; min-width: 0; }
+.gp-modal-name { font-size: 0.85rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gp-modal-meta { font-size: 0.72rem; color: var(--text-secondary); }
+.gp-modal-addr { font-size: 0.7rem; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gp-modal-check { display: none; font-size: 1.1rem; flex-shrink: 0; }
+
+/* API Key settings link */
+.gp-settings-link {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.75rem; color: var(--text-light); cursor: pointer;
+    padding: 0.2rem 0.5rem; border-radius: 4px; transition: color 0.2s;
+}
+.gp-settings-link:hover { color: #4285f4; }
+
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 999px; }
