@@ -86,11 +86,124 @@ function hapticFeedback(type = 'light') {
 // YouTube 推薦影片資料庫
 const YT_RECOMMENDATIONS = {
     hualien: [
-        { title: '花蓮三天兩夜行程全攻略！在地人帶路必去景點', videoId: '5PEbCHBMXrY', channel: '旅遊達人', views: '125萬', thumb: 'https://images.unsplash.com/photo-1590089415225-401ed6f9db8e?w=240&h=135&fit=crop' },
-        { title: '太魯閣一日遊｜砂卡礑步道＋燕子口＋白楊步道', videoId: 'KJWBfMBp38o', channel: '山林探險家', views: '89萬', thumb: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=240&h=135&fit=crop' },
-        { title: '花蓮美食TOP10！公正包子、炸彈蔥油餅全攻略', videoId: 'qGc0Ew7t2yA', channel: '美食旅行', views: '67萬', thumb: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=240&h=135&fit=crop' },
-        { title: '七星潭日出＋清水斷崖｜花蓮最美海岸線', videoId: 'T7os0ya7RE4', channel: '攝影旅人', views: '52萬', thumb: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=240&h=135&fit=crop' },
-        { title: '花蓮住宿推薦｜6間高CP值飯店民宿評比', videoId: 'xIxsKMERW_Y', channel: '旅宿評鑑', views: '38萬', thumb: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=240&h=135&fit=crop' },
+        { title: '花蓮三天兩夜行程全攻略！在地人帶路必去景點', videoId: '5PEbCHBMXrY', channel: '旅遊達人', views: '125萬' },
+        { title: '太魯閣一日遊｜砂卡礑步道＋燕子口＋白楊步道', videoId: 'KJWBfMBp38o', channel: '山林探險家', views: '89萬' },
+        { title: '花蓮美食TOP10！公正包子、炸彈蔥油餅全攻略', videoId: 'qGc0Ew7t2yA', channel: '美食旅行', views: '67萬' },
+        { title: '七星潭日出＋清水斷崖｜花蓮最美海岸線', videoId: 'T7os0ya7RE4', channel: '攝影旅人', views: '52萬' },
+        { title: '花蓮住宿推薦｜6間高CP值飯店民宿評比', videoId: 'xIxsKMERW_Y', channel: '旅宿評鑑', views: '38萬' },
+    ],
+    taipei: [
+        { title: '台北三天兩夜行程攻略｜必去景點美食全收錄', videoId: 'pVHKp6ffURY', channel: '旅遊達人', views: '200萬' },
+        { title: '台北101＋信義區一日遊攻略', videoId: 'X3EN1Q5MmZI', channel: '城市探索', views: '95萬' },
+        { title: '台北夜市美食TOP10｜士林饒河寧夏', videoId: 'VAAEw8Dvkoc', channel: '美食旅行', views: '150萬' },
+        { title: '北投溫泉一日遊｜交通景點美食全攻略', videoId: '3W-sMH3wJKE', channel: '溫泉旅人', views: '45萬' },
+        { title: '台北住宿推薦｜高CP值飯店精選', videoId: 'IFgVVMFNx3E', channel: '旅宿評鑑', views: '35萬' },
+    ],
+    taichung: [
+        { title: '台中三天兩夜行程全攻略｜在地人推薦', videoId: 'Sb3Gfcq1Hpk', channel: '旅遊達人', views: '110萬' },
+        { title: '台中美食地圖｜30間必吃餐廳小吃', videoId: 'rOB23FrM0fU', channel: '美食旅行', views: '88萬' },
+        { title: '高美濕地＋彩虹眷村一日遊', videoId: '82SETUP_WBk', channel: '自然探索', views: '62萬' },
+        { title: '逢甲夜市完全攻略｜必買必吃清單', videoId: 'sM-kZXQB3SQ', channel: '夜市達人', views: '75萬' },
+        { title: '台中住宿推薦｜平價到奢華全攻略', videoId: 'yC_b-dZxiYo', channel: '旅宿評鑑', views: '30萬' },
+    ],
+    tainan: [
+        { title: '台南三天兩夜行程攻略｜古蹟美食之旅', videoId: '_yXBqCCsCnA', channel: '旅遊達人', views: '130萬' },
+        { title: '台南美食TOP15｜在地人帶路吃透透', videoId: 'L6oCL0JrbaA', channel: '美食旅行', views: '180萬' },
+        { title: '台南古蹟巡禮｜赤崁樓安平古堡全攻略', videoId: 'WPr28eWDd_Y', channel: '歷史旅人', views: '55萬' },
+        { title: '台南神農街＋正興街文青散步路線', videoId: 'pQlBOqJ7nEs', channel: '文青探索', views: '42萬' },
+        { title: '台南住宿推薦｜老屋民宿精選', videoId: 'J7T-VdN2sKg', channel: '旅宿評鑑', views: '28萬' },
+    ],
+    kaohsiung: [
+        { title: '高雄三天兩夜行程攻略｜港都必玩景點', videoId: 'OMLXLA_t3YA', channel: '旅遊達人', views: '95萬' },
+        { title: '駁二藝術特區＋旗津一日遊', videoId: 'YQR0qzvWN44', channel: '城市探索', views: '70萬' },
+        { title: '高雄美食全攻略｜鹽埕瑞豐夜市', videoId: 'tKR79WvBTIM', channel: '美食旅行', views: '85萬' },
+        { title: '蓮池潭龍虎塔＋左營舊城巡禮', videoId: 'KxSxT6U-UxM', channel: '歷史旅人', views: '38萬' },
+        { title: '高雄住宿推薦｜海景飯店精選', videoId: '5t-pXxR3ynA', channel: '旅宿評鑑', views: '25萬' },
+    ],
+    yilan: [
+        { title: '宜蘭兩天一夜行程攻略｜溫泉美食景點', videoId: 'FuX7WT_0tfk', channel: '旅遊達人', views: '85萬' },
+        { title: '宜蘭礁溪溫泉一日遊全攻略', videoId: 'VDkCxE2BGSA', channel: '溫泉旅人', views: '60萬' },
+        { title: '宜蘭美食地圖｜羅東夜市必吃', videoId: 'R1W8xkqxCPE', channel: '美食旅行', views: '72萬' },
+        { title: '太平山森林遊樂區完整攻略', videoId: 'I7nM_dnxW7A', channel: '山林探險家', views: '48萬' },
+        { title: '宜蘭住宿推薦｜溫泉旅館精選', videoId: 'C-C0lQ3JXNQ', channel: '旅宿評鑑', views: '32萬' },
+    ],
+    taitung: [
+        { title: '台東三天兩夜行程攻略｜縱谷海岸全收錄', videoId: 'oWiqoR6PRCA', channel: '旅遊達人', views: '78萬' },
+        { title: '綠島三天兩夜完整攻略', videoId: 'u7HhAgQD7CA', channel: '離島探索', views: '65萬' },
+        { title: '台東美食TOP10｜池上伯朗大道', videoId: 'y_I9iKSmmJE', channel: '美食旅行', views: '55萬' },
+        { title: '台東熱氣球嘉年華全攻略', videoId: 'FXYVpJPLTjA', channel: '節慶旅人', views: '42萬' },
+        { title: '台東住宿推薦｜海景民宿精選', videoId: 'sBbXS97IMHE', channel: '旅宿評鑑', views: '22萬' },
+    ],
+    nantou: [
+        { title: '南投三天兩夜行程攻略｜日月潭清境全收錄', videoId: 'EQ8HdOUFCDc', channel: '旅遊達人', views: '100萬' },
+        { title: '日月潭一日遊完整攻略', videoId: 'g_Pg7RXrUjY', channel: '湖光探索', views: '82萬' },
+        { title: '清境農場＋合歡山兩天一夜', videoId: 'TqDOmLSTJhw', channel: '山林探險家', views: '70萬' },
+        { title: '南投美食地圖｜埔里日月潭必吃', videoId: 'hKjMlRFKxVo', channel: '美食旅行', views: '45萬' },
+        { title: '南投住宿推薦｜湖景山景民宿', videoId: 'rQ_6SBuYrJE', channel: '旅宿評鑑', views: '28萬' },
+    ],
+    pingtung: [
+        { title: '墾丁三天兩夜行程攻略｜海灘水上全收錄', videoId: 'Rt_cDy89cYU', channel: '旅遊達人', views: '90萬' },
+        { title: '小琉球兩天一夜完整攻略', videoId: 'fVq_AQ-WYLE', channel: '離島探索', views: '75萬' },
+        { title: '墾丁美食TOP10｜恆春墾丁大街', videoId: 'wgYjy7MWMyQ', channel: '美食旅行', views: '58萬' },
+        { title: '屏東原住民文化之旅｜三地門霧台', videoId: 'hZXR_Yr_jCE', channel: '文化旅人', views: '35萬' },
+        { title: '墾丁住宿推薦｜海景度假村精選', videoId: 'oPzFRE_oE5I', channel: '旅宿評鑑', views: '30萬' },
+    ],
+    newtaipei: [
+        { title: '新北景點全攻略｜九份平溪十分一日遊', videoId: 'pSj_vEBEyrA', channel: '旅遊達人', views: '120萬' },
+        { title: '九份老街完整攻略｜交通美食景點', videoId: 'fX2ZhCFN5J8', channel: '老街探索', views: '90萬' },
+        { title: '新北美食地圖｜淡水三峽鶯歌必吃', videoId: 'NI8z4bkh04I', channel: '美食旅行', views: '65萬' },
+        { title: '東北角海岸一日遊｜龍洞野柳', videoId: 'cVuP_ZD8xfA', channel: '海岸探索', views: '48萬' },
+    ],
+    keelung: [
+        { title: '基隆一日遊全攻略｜廟口夜市和平島', videoId: 'K-gxncHP0Gg', channel: '旅遊達人', views: '75萬' },
+        { title: '基隆廟口夜市美食TOP10', videoId: 'eHAE16SBLYA', channel: '美食旅行', views: '88萬' },
+        { title: '基隆嶼登島攻略｜絕美秘境', videoId: 'YS5DmfJwKBM', channel: '離島探索', views: '42萬' },
+    ],
+    taoyuan: [
+        { title: '桃園一日遊攻略｜大溪老街拉拉山', videoId: 'cT1OG2xCmhY', channel: '旅遊達人', views: '60萬' },
+        { title: '桃園美食地圖｜中壢夜市大溪豆干', videoId: 'l1bkBjQYOuc', channel: '美食旅行', views: '55萬' },
+        { title: 'Xpark水族館完整攻略', videoId: 'QdQg2bz1XgQ', channel: '親子旅遊', views: '80萬' },
+    ],
+    hsinchu: [
+        { title: '新竹兩天一夜行程攻略｜城隍廟南寮', videoId: 'wF1_YdfL5LI', channel: '旅遊達人', views: '50萬' },
+        { title: '新竹美食全攻略｜城隍廟小吃', videoId: 'aM_Gr-s6qTE', channel: '美食旅行', views: '62萬' },
+        { title: '司馬庫斯＋內灣老街二日遊', videoId: 'CxYL2TIwFqs', channel: '山林探險家', views: '55萬' },
+    ],
+    miaoli: [
+        { title: '苗栗二日遊攻略｜南庄三義勝興車站', videoId: 'PQzL1X9wrVM', channel: '旅遊達人', views: '45萬' },
+        { title: '苗栗美食客家小炒粄條全攻略', videoId: '9PUB8G5k4jk', channel: '美食旅行', views: '38萬' },
+        { title: '苗栗大湖草莓季＋薰衣草森林', videoId: 'rvZpBnSx7nY', channel: '季節旅人', views: '50萬' },
+    ],
+    changhua: [
+        { title: '彰化一日遊攻略｜鹿港老街大佛', videoId: 'QhjVw8CV87k', channel: '旅遊達人', views: '55萬' },
+        { title: '鹿港美食全攻略｜蚵仔煎肉圓', videoId: 'mV8vBWEfNLg', channel: '美食旅行', views: '48萬' },
+        { title: '彰化八卦山＋扇形車庫巡禮', videoId: 'K5e0l_qf7zU', channel: '鐵道旅人', views: '30萬' },
+    ],
+    yunlin: [
+        { title: '雲林一日遊攻略｜北港朝天宮虎尾', videoId: 'gzxC7B9jx-g', channel: '旅遊達人', views: '35萬' },
+        { title: '雲林美食地圖｜北港鴨肉飯', videoId: 'F2g9IYNlhAs', channel: '美食旅行', views: '30萬' },
+        { title: '劍湖山世界完整攻略', videoId: 'eC1O0X_Q7ZE', channel: '遊樂園達人', views: '42萬' },
+    ],
+    chiayi: [
+        { title: '嘉義三天兩夜攻略｜阿里山文化路夜市', videoId: 'S_IYMOGtjf4', channel: '旅遊達人', views: '85萬' },
+        { title: '阿里山日出雲海全攻略', videoId: 'EGCa3_Gc_xk', channel: '山林探險家', views: '95萬' },
+        { title: '嘉義美食TOP10｜雞肉飯林聰明', videoId: 'gLGIEY6SzWY', channel: '美食旅行', views: '70萬' },
+        { title: '嘉義住宿推薦｜阿里山民宿精選', videoId: 'TWfR_lLJr9g', channel: '旅宿評鑑', views: '28萬' },
+    ],
+    penghu: [
+        { title: '澎湖三天兩夜完整攻略｜跳島行程', videoId: '_6Hy3ZVHP1w', channel: '旅遊達人', views: '110萬' },
+        { title: '澎湖美食全攻略｜海鮮仙人掌冰', videoId: 'VhxXpwqBOUo', channel: '美食旅行', views: '65萬' },
+        { title: '澎湖花火節＋藍洞秘境', videoId: 'l2Y6FBm3EMw', channel: '節慶旅人', views: '80萬' },
+    ],
+    kinmen: [
+        { title: '金門三天兩夜行程全攻略', videoId: 'xPe3_VBWD5A', channel: '旅遊達人', views: '55萬' },
+        { title: '金門美食地圖｜廣東粥蚵嗲', videoId: 'J0SU0Cv2ZQM', channel: '美食旅行', views: '40萬' },
+        { title: '金門戰地文化巡禮', videoId: '8_CLkAQ9JNA', channel: '歷史旅人', views: '35萬' },
+    ],
+    matsu: [
+        { title: '馬祖三天兩夜完整攻略｜藍眼淚追淚', videoId: 'yCSMccv0W6M', channel: '旅遊達人', views: '50萬' },
+        { title: '馬祖美食攻略｜老酒麵線紅糟', videoId: 'pLRs7GMZHLM', channel: '美食旅行', views: '32萬' },
+        { title: '馬祖北竿南竿跳島攻略', videoId: 'iqJOQWpMnQE', channel: '離島探索', views: '38萬' },
     ],
 };
 
@@ -457,16 +570,19 @@ class TravelApp {
             const top = data.attractions.slice().sort((a, b) => b.rating - a.rating).slice(0, 8);
             attPanel.innerHTML = `
                 <div class="rec-scroll">${top.map(a => `
-                    <div class="rec-card" onclick="app.showDetail('attraction','${a.id}')">
-                        <div class="rec-card-img" style="background-image:url('${a.image}')">
+                    <div class="rec-card">
+                        <div class="rec-card-img" style="background-image:url('${a.image}')" onclick="app.showDetail('attraction','${a.id}')">
                             <span class="rec-card-badge">${sanitizeHTML(a.type)}</span>
                             <span class="rec-card-rating"><i class="fas fa-star"></i> ${a.rating}</span>
                         </div>
-                        <div class="rec-card-body">
+                        <div class="rec-card-body" onclick="app.showDetail('attraction','${a.id}')">
                             <div class="rec-card-title">${sanitizeHTML(a.name)}</div>
                             <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(a.address).substring(0, 20)}</div>
                             <div class="rec-card-desc">${sanitizeHTML(a.description).substring(0, 60)}${a.description?.length > 60 ? '...' : ''}</div>
                             <div class="rec-card-price">${a.ticket === 0 ? '🆓 免費' : `🎫 NT$${a.ticket}`}</div>
+                        </div>
+                        <div class="rec-card-actions">
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name)}+${a.lat},${a.lng}" target="_blank" class="rec-action-btn rec-action-map" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> 地圖</a>
                         </div>
                     </div>`).join('')}
                 </div>
@@ -481,16 +597,19 @@ class TravelApp {
             const top = data.restaurants.slice().sort((a, b) => b.rating - a.rating).slice(0, 8);
             resPanel.innerHTML = `
                 <div class="rec-scroll">${top.map(r => `
-                    <div class="rec-card" onclick="app.showDetail('restaurant','${r.id}')">
-                        <div class="rec-card-img" style="background-image:url('${r.image}')">
+                    <div class="rec-card">
+                        <div class="rec-card-img" style="background-image:url('${r.image}')" onclick="app.showDetail('restaurant','${r.id}')">
                             <span class="rec-card-badge">${sanitizeHTML(r.type)}</span>
                             <span class="rec-card-rating"><i class="fas fa-star"></i> ${r.rating}</span>
                         </div>
-                        <div class="rec-card-body">
+                        <div class="rec-card-body" onclick="app.showDetail('restaurant','${r.id}')">
                             <div class="rec-card-title">${sanitizeHTML(r.name)}</div>
                             <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(r.address).substring(0, 20)}</div>
                             <div class="rec-card-desc">${sanitizeHTML(r.description).substring(0, 60)}${r.description?.length > 60 ? '...' : ''}</div>
                             <div class="rec-card-price">💰 ~NT$${r.price}/人</div>
+                        </div>
+                        <div class="rec-card-actions">
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}+${r.lat},${r.lng}" target="_blank" class="rec-action-btn rec-action-map" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> 地圖</a>
                         </div>
                     </div>`).join('')}
                 </div>
@@ -507,16 +626,19 @@ class TravelApp {
                 <div class="rec-scroll">${top.map(h => {
                     const best = Math.min(...Object.values(h.prices).filter(v => v > 0));
                     return `
-                    <div class="rec-card" onclick="app.showDetail('hotel','${h.id}')">
-                        <div class="rec-card-img" style="background-image:url('${h.image}')">
+                    <div class="rec-card">
+                        <div class="rec-card-img" style="background-image:url('${h.image}')" onclick="app.showDetail('hotel','${h.id}')">
                             <span class="rec-card-badge">${sanitizeHTML(h.type)}</span>
                             <span class="rec-card-rating"><i class="fas fa-star"></i> ${h.rating}</span>
                         </div>
-                        <div class="rec-card-body">
+                        <div class="rec-card-body" onclick="app.showDetail('hotel','${h.id}')">
                             <div class="rec-card-title">${sanitizeHTML(h.name)}</div>
                             <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(h.address).substring(0, 20)}</div>
                             <div class="rec-card-desc">${sanitizeHTML(h.description).substring(0, 60)}${h.description?.length > 60 ? '...' : ''}</div>
                             <div class="rec-card-price">🏨 NT$${best.toLocaleString()}起/晚</div>
+                        </div>
+                        <div class="rec-card-actions">
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name)}+${h.lat},${h.lng}" target="_blank" class="rec-action-btn rec-action-map" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> 地圖</a>
                         </div>
                     </div>`;
                 }).join('')}
@@ -601,17 +723,21 @@ class TravelApp {
 
     /** 渲染 Google Places 推薦卡片 */
     _renderGPRecCard(place, index) {
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}+${place.lat},${place.lng}`;
         return `
-            <div class="rec-card" onclick="app.showGPDetail('${place._placeId || place.id}')" style="border-color:rgba(66,133,244,0.3)">
-                <div class="rec-card-img" style="background-image:url('${place.image}')">
+            <div class="rec-card" style="border-color:rgba(66,133,244,0.3)">
+                <div class="rec-card-img" style="background-image:url('${place.image}')" onclick="app.showGPDetail('${place._placeId || place.id}')">
                     <span class="rec-card-badge" style="background:rgba(66,133,244,0.9)">${sanitizeHTML(place.type)}</span>
                     ${place.rating ? `<span class="rec-card-rating"><i class="fas fa-star"></i> ${place.rating}</span>` : ''}
                 </div>
-                <div class="rec-card-body">
+                <div class="rec-card-body" onclick="app.showGPDetail('${place._placeId || place.id}')">
                     <div class="rec-card-title">${sanitizeHTML(place.name)}</div>
                     <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(place.address).substring(0, 25)}</div>
                     ${place.description ? `<div class="rec-card-desc">${sanitizeHTML(place.description).substring(0, 60)}...</div>` : ''}
                     ${place.reviews ? `<div class="rec-card-price" style="color:#4285f4"><i class="fas fa-comment"></i> ${place.reviews.toLocaleString()} 則評論</div>` : ''}
+                </div>
+                <div class="rec-card-actions">
+                    <a href="${mapsUrl}" target="_blank" class="rec-action-btn rec-action-map" onclick="event.stopPropagation()"><i class="fas fa-map-marker-alt"></i> 地圖</a>
                 </div>
             </div>`;
     }
@@ -800,19 +926,22 @@ class TravelApp {
     renderYTRecommendations() {
         const container = document.getElementById('yt-recommend-list');
         const videos = YT_RECOMMENDATIONS[this.selectedCity] || YT_RECOMMENDATIONS.hualien;
-        container.innerHTML = videos.map(v => `
+        const cityName = TAIWAN_CITIES.find(c => c.id === this.selectedCity)?.name || '';
+        container.innerHTML = videos.map(v => {
+            const thumb = v.thumb || `https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`;
+            return `
             <div class="yt-video-card" onclick="app.showYTPlayer('${v.videoId}')">
                 <div class="yt-video-thumb">
-                    <img src="${v.thumb}" alt="${v.title}">
+                    <img src="${thumb}" alt="${sanitizeHTML(v.title)}">
                     <span class="play-icon"><i class="fas fa-play"></i></span>
                 </div>
                 <div class="yt-video-info">
-                    <div class="yt-video-title">${v.title}</div>
-                    <div class="yt-video-meta">${v.channel} · ${v.views}次觀看</div>
+                    <div class="yt-video-title">${sanitizeHTML(v.title)}</div>
+                    <div class="yt-video-meta">${sanitizeHTML(v.channel)} · ${v.views}次觀看</div>
                     <div style="margin-top:0.3rem"><a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="background:#fff0f0;color:#ff0000;border-color:rgba(255,0,0,0.2)"><i class="fab fa-youtube"></i> 開啟 YouTube</a></div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
 
     // ===== YouTube Player Modal (info card, no iframe) =====
@@ -820,7 +949,7 @@ class TravelApp {
         const allVideos = Object.values(YT_RECOMMENDATIONS).flat();
         const video = allVideos.find(v => v.videoId === videoId);
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const thumbUrl = video ? video.thumb : `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=480&h=270&fit=crop`;
+        const thumbUrl = video?.thumb || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         const title = video ? video.title : '旅遊影片';
         const channel = video ? video.channel : '';
         const views = video ? video.views : '';
@@ -1574,10 +1703,10 @@ class TravelApp {
             <div class="yt-recommend-list">
                 ${videos.map(v => `
                     <div class="yt-video-card" onclick="app.showYTPlayer('${v.videoId}')">
-                        <div class="yt-video-thumb"><img src="${v.thumb}" alt=""><span class="play-icon"><i class="fas fa-play"></i></span></div>
+                        <div class="yt-video-thumb"><img src="${v.thumb || 'https://img.youtube.com/vi/' + v.videoId + '/mqdefault.jpg'}" alt="${sanitizeHTML(v.title)}"><span class="play-icon"><i class="fas fa-play"></i></span></div>
                         <div class="yt-video-info">
-                            <div class="yt-video-title">${v.title}</div>
-                            <div class="yt-video-meta">${v.channel} · ${v.views}次觀看</div>
+                            <div class="yt-video-title">${sanitizeHTML(v.title)}</div>
+                            <div class="yt-video-meta">${sanitizeHTML(v.channel)} · ${v.views}次觀看</div>
                             <div style="margin-top:0.3rem"><a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" class="gmaps-link" onclick="event.stopPropagation()" style="background:#fff0f0;color:#ff0000;border-color:rgba(255,0,0,0.2)"><i class="fab fa-youtube"></i> 開啟 YouTube</a></div>
                         </div>
                     </div>`).join('')}

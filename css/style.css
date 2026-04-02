@@ -1584,6 +1584,18 @@ body {
 .rec-card-price {
     font-size: 0.75rem; color: var(--primary); font-weight: 600; margin-top: 0.2rem;
 }
+.rec-card-actions {
+    display: flex; gap: 0.3rem; padding: 0 0.55rem 0.5rem;
+}
+.rec-action-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.25rem;
+    padding: 0.35rem 0.3rem; border-radius: 5px; font-size: 0.68rem; font-weight: 600;
+    text-decoration: none; transition: all 0.2s; cursor: pointer; border: none;
+}
+.rec-action-map {
+    background: #e8f0fe; color: #1a73e8; border: 1px solid rgba(26,115,232,0.2);
+}
+.rec-action-map:hover { background: #d2e3fc; }
 .rec-empty { text-align: center; color: var(--text-light); padding: 1.5rem; font-size: 0.85rem; }
 .rec-gp-search {
     display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem;
