@@ -1019,7 +1019,7 @@ class TravelApp {
     }
 
     // ===== Generate Trip =====
-    generateTrip() {
+    async generateTrip() {
         if (rateLimited('generate', 3000)) { this.showToast('請稍候，不要重複點擊'); return; }
         hapticFeedback('medium');
         if (!this.selectedHotel) { this.showToast('請先選擇住宿！'); return; }
@@ -1035,6 +1035,11 @@ class TravelApp {
         const btn = document.getElementById('btn-generate-trip');
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在規劃最佳行程...';
         btn.disabled = true;
+
+        // 如果沒有本地資料，先用 Google Places 搜尋
+        if (!hasLocalData(this.selectedCity)) {
+            await this._prepareGPDataForCity();
+        }
 
         setTimeout(() => {
             this.buildItinerary();
@@ -1055,9 +1060,80 @@ class TravelApp {
         }, 1200);
     }
 
+    /** 為沒有本地資料的城市準備 Google Places 資料 */
+    async _prepareGPDataForCity() {
+        const cityInfo = TAIWAN_CITIES.find(c => c.id === this.selectedCity);
+        const cityName = cityInfo?.name || '';
+        const location = cityInfo ? { lat: cityInfo.lat, lng: cityInfo.lng } : null;
+
+        try {
+            // 直接初始化 Google Places（不彈出 modal）
+            const apiKey = this.googleApiKey || localStorage.getItem('travelgo_gp_key') || '';
+            if (!apiKey) {
+                this.showToast('請先設定 Google API Key（右上角 🔑）');
+                return;
+            }
+            if (window.placesService) {
+                window.placesService.apiKey = apiKey;
+                await window.placesService.init();
+            }
+
+            this.showToast('🔍 正在搜尋' + cityName + '的景點與餐廳...');
+
+            const [attractions, restaurants] = await Promise.all([
+                window.placesService.searchPlaces(`${cityName} 熱門景點 推薦`, location, '', 20).catch(() => []),
+                window.placesService.searchPlaces(`${cityName} 必吃美食 餐廳`, location, 'restaurant', 15).catch(() => []),
+            ]);
+
+            // 轉換為本地資料格式，暫存到 DESTINATIONS_DB
+            const gpAttractions = attractions.map((p, i) => ({
+                ...p,
+                id: p.id || `gp_a_${i}`,
+                ticket: 0,
+                hasTicket: false,
+                duration: '1-2小時',
+                openDays: [0,1,2,3,4,5,6],
+                tags: [p.type || '景點'],
+                reason: p.description || '',
+                userReview: '',
+                recommended: [],
+                bestTimeSlot: null,
+            }));
+
+            const gpRestaurants = restaurants.map((p, i) => ({
+                ...p,
+                id: p.id || `gp_r_${i}`,
+                price: p.price || 300,
+                hours: p.hours || '11:00-21:00',
+                openDays: [0,1,2,3,4,5,6],
+                tags: [p.type || '餐廳'],
+                reason: p.description || '',
+                userReview: '',
+                recommended: [],
+                bestTimeSlot: null,
+                closedDays: '',
+            }));
+
+            // 暫時注入到 DESTINATIONS_DB（不影響原始資料）
+            this._gpTempData = {
+                name: cityName,
+                center: location || { lat: 25.0, lng: 121.5 },
+                attractions: gpAttractions,
+                restaurants: gpRestaurants,
+                hotels: [],
+                transport: [],
+            };
+        } catch (err) {
+            console.error('[GP Prepare] Error:', err);
+        }
+    }
+
     buildItinerary() {
         try {
-        const data = getDestData(this.selectedCity);
+        // 優先使用本地資料，沒有的話用 Google Places 暫存資料
+        const data = hasLocalData(this.selectedCity)
+            ? getDestData(this.selectedCity)
+            : (this._gpTempData || getDestData(this.selectedCity));
         const hotel = this.selectedHotel;
 
         // Helper functions for time math
@@ -1091,16 +1167,16 @@ class TravelApp {
             return null;
         }
 
-        let attractions = data.attractions.filter(a => {
-            if (a.rating < this.preferences.rating) return false;
+        let attractions = (data.attractions || []).filter(a => {
+            if ((a.rating || 0) < this.preferences.rating) return false;
             if (!this.preferences.includeTicket && a.hasTicket) return false;
             if (!this.preferences.includeFree && !a.hasTicket && a.ticket === 0) return false;
             return true;
         });
 
-        let restaurants = data.restaurants.filter(r => {
-            if (r.rating < this.preferences.rating) return false;
-            if (r.price > this.preferences.mealBudget) return false;
+        let restaurants = (data.restaurants || []).filter(r => {
+            if ((r.rating || 0) < this.preferences.rating) return false;
+            if ((r.price || 0) > this.preferences.mealBudget) return false;
             return true;
         });
 
@@ -1549,7 +1625,7 @@ class TravelApp {
     // ===== Attractions (with editable ticket price) =====
     renderAttractions() {
         const c = document.getElementById('tab-attractions');
-        const data = getDestData(this.selectedCity);
+        const data = hasLocalData(this.selectedCity) ? getDestData(this.selectedCity) : (this._gpTempData || getDestData(this.selectedCity));
         c.innerHTML = `
             <div class="gp-search-section">
                 <div class="gp-search-bar">
@@ -1592,7 +1668,7 @@ class TravelApp {
     // ===== Restaurants (with editable price) =====
     renderRestaurants() {
         const c = document.getElementById('tab-restaurants');
-        const data = getDestData(this.selectedCity);
+        const data = hasLocalData(this.selectedCity) ? getDestData(this.selectedCity) : (this._gpTempData || getDestData(this.selectedCity));
         c.innerHTML = `
             <div class="gp-search-section">
                 <div class="gp-search-bar">
@@ -1716,7 +1792,7 @@ class TravelApp {
     // ===== Detail Modal =====
     showDetail(type, id) {
         try {
-        const data = getDestData(this.selectedCity);
+        const data = hasLocalData(this.selectedCity) ? getDestData(this.selectedCity) : (this._gpTempData || getDestData(this.selectedCity));
         let item;
         if (type === 'attraction') item = data.attractions.find(a => a.id === id);
         else if (type === 'restaurant') item = data.restaurants.find(r => r.id === id);
