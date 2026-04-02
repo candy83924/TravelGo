@@ -162,8 +162,10 @@ class GooglePlacesService {
             appType = 'attraction';
         }
 
-        // 顯示名稱
-        const displayType = place.primaryTypeDisplayName?.text || itemType;
+        // 顯示名稱 (New API 直接回傳字串，非 {text:...} 物件)
+        const displayType = (typeof place.primaryTypeDisplayName === 'string'
+            ? place.primaryTypeDisplayName
+            : place.primaryTypeDisplayName?.text) || itemType;
 
         // 開放時間
         let hoursStr = '';
@@ -179,21 +181,21 @@ class GooglePlacesService {
 
         return {
             id: 'gp_' + (place.id || Math.random().toString(36).substr(2, 9)),
-            name: place.displayName?.text || '未知地點',
+            name: (typeof place.displayName === 'string' ? place.displayName : place.displayName?.text) || '未知地點',
             type: displayType,
-            rating: place.rating || 0,
-            reviews: place.userRatingCount || 0,
+            rating: (typeof place.rating === 'number') ? place.rating : 0,
+            reviews: (typeof place.userRatingCount === 'number') ? place.userRatingCount : 0,
             ticket: 0,
             price: 0,
             priceLevel: priceLevel,
             address: place.formattedAddress || '',
-            lat: place.location?.lat() || 0,
-            lng: place.location?.lng() || 0,
+            lat: (typeof place.location?.lat === 'function' ? place.location.lat() : place.location?.lat) || 0,
+            lng: (typeof place.location?.lng === 'function' ? place.location.lng() : place.location?.lng) || 0,
             hours: hoursStr,
             openDays: [0, 1, 2, 3, 4, 5, 6],
             duration: '1-2小時',
             hasTicket: false,
-            description: place.editorialSummary?.text || '',
+            description: (typeof place.editorialSummary === 'string' ? place.editorialSummary : place.editorialSummary?.text) || '',
             reason: '',
             userReview: '',
             recommended: [],

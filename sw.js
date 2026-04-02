@@ -1,11 +1,11 @@
 // TravelGo Service Worker - PWA Offline Support
-const CACHE_NAME = 'travelgo-v12';
+const CACHE_NAME = 'travelgo-v13';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/css/style.css?v=12',
     '/js/data.js?v=12',
-    '/js/places.js?v=12',
+    '/js/places.js?v=13',
     '/js/map.js?v=12',
     '/js/app.js?v=12',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
