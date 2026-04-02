@@ -128,7 +128,7 @@ class TravelApp {
         this.attractionsPerDay = 3;
         this.mealBudgets = { breakfast: 150, lunch: 300, dinner: 500 };
         this.perDayTimes = [];
-        this.googleApiKey = '';
+        this.googleApiKey = localStorage.getItem('travelgo_gp_key') || '';
         this._googleSearchResults = []; // 暫存 Google 搜尋結果
         this.init();
     }
@@ -151,6 +151,10 @@ class TravelApp {
     }
 
     setupAll() {
+        // 初始化 Google Places API Key
+        if (this.googleApiKey && window.placesService) {
+            window.placesService.apiKey = this.googleApiKey;
+        }
         this.renderCityGrid();
         this.renderTransportOptions();
         this.setupDateInput();
@@ -331,8 +335,16 @@ class TravelApp {
     // ===== Hotel List (with editable prices) =====
     renderHotelList() {
         const container = document.getElementById('hotel-list');
+        const hasLocal = hasLocalData(this.selectedCity);
         const data = getDestData(this.selectedCity);
-        if (!data?.hotels) { container.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:1rem">此目的地住宿資料建置中</p>'; return; }
+        if (!hasLocal || !data?.hotels) {
+            const cityInfo = TAIWAN_CITIES.find(c => c.id === this.selectedCity);
+            const cityName = cityInfo?.name || '此目的地';
+            container.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:1rem">
+                ${sanitizeHTML(cityName)}尚無精選住宿資料，請使用上方 Google 搜尋或自行填入住宿
+            </p>`;
+            return;
+        }
 
         // 在住宿列表上方插入 Google 搜尋（只插入一次）
         let searchWrap = document.getElementById('gp-hotel-search-wrap');
@@ -426,6 +438,16 @@ class TravelApp {
     }
 
     renderDestRecommendations() {
+        const cityInfo = TAIWAN_CITIES.find(c => c.id === this.selectedCity);
+        const cityName = cityInfo?.name || '目的地';
+        const hasLocal = hasLocalData(this.selectedCity);
+
+        // 如果沒有本地資料，用 Google Places 自動搜尋
+        if (!hasLocal) {
+            this._renderGPRecommendations(cityName, cityInfo);
+            return;
+        }
+
         const data = getDestData(this.selectedCity);
         if (!data) return;
 
@@ -503,6 +525,95 @@ class TravelApp {
                     <i class="fab fa-google"></i> 在 Google 地圖搜尋更多${sanitizeHTML(data.name)}住宿...
                 </div>`;
         }
+    }
+
+    /** 沒有本地資料的城市，自動用 Google Places 搜尋推薦 */
+    async _renderGPRecommendations(cityName, cityInfo) {
+        const panels = {
+            attractions: document.getElementById('rec-panel-attractions'),
+            restaurants: document.getElementById('rec-panel-restaurants'),
+            hotels: document.getElementById('rec-panel-hotels'),
+        };
+
+        // 先顯示載入狀態
+        const loadingHTML = `<div class="rec-empty"><i class="fas fa-spinner fa-spin"></i> 正在從 Google 地圖載入${sanitizeHTML(cityName)}的推薦...</div>`;
+        Object.values(panels).forEach(p => { if (p) p.innerHTML = loadingHTML; });
+
+        // 檢查 Google API
+        const hasAPI = localStorage.getItem('travelgo_gp_key');
+        if (!hasAPI) {
+            const noApiHTML = `<div class="rec-empty">
+                <i class="fas fa-key" style="font-size:1.5rem;color:var(--primary);margin-bottom:0.5rem;display:block"></i>
+                <p>${sanitizeHTML(cityName)}尚無精選資料</p>
+                <p style="font-size:0.78rem;margin-top:0.3rem">請先設定 Google API Key（點擊右上角 🔑）即可自動搜尋推薦</p>
+            </div>`;
+            Object.values(panels).forEach(p => { if (p) p.innerHTML = noApiHTML; });
+            return;
+        }
+
+        try {
+            const ok = await this._ensureGooglePlaces();
+            if (!ok) throw new Error('Google Places API 載入失敗');
+
+            const location = cityInfo ? { lat: cityInfo.lat, lng: cityInfo.lng } : null;
+
+            // 並行搜尋三種類型
+            const [attractions, restaurants, hotels] = await Promise.all([
+                window.placesService.searchPlaces(`${cityName} 熱門景點 推薦`, location, '', 10).catch(() => []),
+                window.placesService.searchPlaces(`${cityName} 必吃美食 餐廳`, location, 'restaurant', 10).catch(() => []),
+                window.placesService.searchPlaces(`${cityName} 住宿 飯店`, location, 'hotel', 10).catch(() => []),
+            ]);
+
+            // 存起來供其他功能使用
+            this._gpRecCache = this._gpRecCache || {};
+            this._gpRecCache[this.selectedCity] = { attractions, restaurants, hotels };
+
+            // 渲染景點
+            if (panels.attractions) {
+                panels.attractions.innerHTML = attractions.length
+                    ? `<div class="rec-scroll">${attractions.map((p, i) => this._renderGPRecCard(p, i)).join('')}</div>`
+                    : `<div class="rec-empty">未找到${sanitizeHTML(cityName)}的景點推薦</div>`;
+            }
+
+            // 渲染餐廳
+            if (panels.restaurants) {
+                panels.restaurants.innerHTML = restaurants.length
+                    ? `<div class="rec-scroll">${restaurants.map((p, i) => this._renderGPRecCard(p, i)).join('')}</div>`
+                    : `<div class="rec-empty">未找到${sanitizeHTML(cityName)}的餐廳推薦</div>`;
+            }
+
+            // 渲染住宿
+            if (panels.hotels) {
+                panels.hotels.innerHTML = hotels.length
+                    ? `<div class="rec-scroll">${hotels.map((p, i) => this._renderGPRecCard(p, i)).join('')}</div>`
+                    : `<div class="rec-empty">未找到${sanitizeHTML(cityName)}的住宿推薦</div>`;
+            }
+
+        } catch (err) {
+            console.error('[RecGP] Error:', err);
+            const errHTML = `<div class="rec-empty">
+                <p>搜尋失敗：${sanitizeHTML(err.message || '未知錯誤')}</p>
+                <p style="font-size:0.75rem;margin-top:0.3rem;color:var(--text-light)">請確認 API Key 設定正確，或稍後再試</p>
+            </div>`;
+            Object.values(panels).forEach(p => { if (p) p.innerHTML = errHTML; });
+        }
+    }
+
+    /** 渲染 Google Places 推薦卡片 */
+    _renderGPRecCard(place, index) {
+        return `
+            <div class="rec-card" onclick="app.showGPDetail('${place._placeId || place.id}')" style="border-color:rgba(66,133,244,0.3)">
+                <div class="rec-card-img" style="background-image:url('${place.image}')">
+                    <span class="rec-card-badge" style="background:rgba(66,133,244,0.9)">${sanitizeHTML(place.type)}</span>
+                    ${place.rating ? `<span class="rec-card-rating"><i class="fas fa-star"></i> ${place.rating}</span>` : ''}
+                </div>
+                <div class="rec-card-body">
+                    <div class="rec-card-title">${sanitizeHTML(place.name)}</div>
+                    <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(place.address).substring(0, 25)}</div>
+                    ${place.description ? `<div class="rec-card-desc">${sanitizeHTML(place.description).substring(0, 60)}...</div>` : ''}
+                    ${place.reviews ? `<div class="rec-card-price" style="color:#4285f4"><i class="fas fa-comment"></i> ${place.reviews.toLocaleString()} 則評論</div>` : ''}
+                </div>
+            </div>`;
     }
 
     /** 從推薦區塊觸發 Google 搜尋 */

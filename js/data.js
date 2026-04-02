@@ -1213,6 +1213,11 @@ function getDestData(cityId) {
     return DESTINATIONS_DB[cityId] || DESTINATIONS_DB.hualien;
 }
 
+/** 檢查城市是否有專屬本地資料（非 fallback） */
+function hasLocalData(cityId) {
+    return !!DESTINATIONS_DB[cityId];
+}
+
 // Helper: 計算兩點間距離（公里）
 function haversine(lat1, lng1, lat2, lng2) {
     const R = 6371;
