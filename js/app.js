@@ -159,6 +159,8 @@ class TravelApp {
         this.setupPreferences();
         this.setupDestTabs();
         this.renderHotelList();
+        this.setupRecTabs();
+        this.renderDestRecommendations();
         this.setupYouTube();
         this.setupDailySettings();
         this.setupEventListeners();
@@ -180,6 +182,7 @@ class TravelApp {
             this.selectedCity = btn.dataset.city;
             this.selectedHotel = null;
             this.renderHotelList();
+            this.renderDestRecommendations();
             this.renderTransportOptions();
             this.renderYTRecommendations();
         });
@@ -406,6 +409,163 @@ class TravelApp {
                 document.getElementById(id)?.addEventListener('change', () => this.renderHotelList());
             });
             this._hotelFiltersBound = true;
+        }
+    }
+
+    // ===== Destination Recommendations =====
+    setupRecTabs() {
+        document.querySelectorAll('.rec-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                hapticFeedback('light');
+                document.querySelectorAll('.rec-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.rec-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(`rec-panel-${tab.dataset.recTab}`)?.classList.add('active');
+            });
+        });
+    }
+
+    renderDestRecommendations() {
+        const data = getDestData(this.selectedCity);
+        if (!data) return;
+
+        // === Attractions panel ===
+        const attPanel = document.getElementById('rec-panel-attractions');
+        if (attPanel && data.attractions) {
+            const top = data.attractions.slice().sort((a, b) => b.rating - a.rating).slice(0, 8);
+            attPanel.innerHTML = `
+                <div class="rec-scroll">${top.map(a => `
+                    <div class="rec-card" onclick="app.showDetail('attraction','${a.id}')">
+                        <div class="rec-card-img" style="background-image:url('${a.image}')">
+                            <span class="rec-card-badge">${sanitizeHTML(a.type)}</span>
+                            <span class="rec-card-rating"><i class="fas fa-star"></i> ${a.rating}</span>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-card-title">${sanitizeHTML(a.name)}</div>
+                            <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(a.address).substring(0, 20)}</div>
+                            <div class="rec-card-desc">${sanitizeHTML(a.description).substring(0, 60)}${a.description?.length > 60 ? '...' : ''}</div>
+                            <div class="rec-card-price">${a.ticket === 0 ? '🆓 免費' : `🎫 NT$${a.ticket}`}</div>
+                        </div>
+                    </div>`).join('')}
+                </div>
+                <div class="rec-gp-search" onclick="app._recGoogleSearch('attractions')">
+                    <i class="fab fa-google"></i> 在 Google 地圖搜尋更多${sanitizeHTML(data.name)}景點...
+                </div>`;
+        }
+
+        // === Restaurants panel ===
+        const resPanel = document.getElementById('rec-panel-restaurants');
+        if (resPanel && data.restaurants) {
+            const top = data.restaurants.slice().sort((a, b) => b.rating - a.rating).slice(0, 8);
+            resPanel.innerHTML = `
+                <div class="rec-scroll">${top.map(r => `
+                    <div class="rec-card" onclick="app.showDetail('restaurant','${r.id}')">
+                        <div class="rec-card-img" style="background-image:url('${r.image}')">
+                            <span class="rec-card-badge">${sanitizeHTML(r.type)}</span>
+                            <span class="rec-card-rating"><i class="fas fa-star"></i> ${r.rating}</span>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-card-title">${sanitizeHTML(r.name)}</div>
+                            <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(r.address).substring(0, 20)}</div>
+                            <div class="rec-card-desc">${sanitizeHTML(r.description).substring(0, 60)}${r.description?.length > 60 ? '...' : ''}</div>
+                            <div class="rec-card-price">💰 ~NT$${r.price}/人</div>
+                        </div>
+                    </div>`).join('')}
+                </div>
+                <div class="rec-gp-search" onclick="app._recGoogleSearch('restaurants')">
+                    <i class="fab fa-google"></i> 在 Google 地圖搜尋更多${sanitizeHTML(data.name)}餐廳...
+                </div>`;
+        }
+
+        // === Hotels panel ===
+        const htlPanel = document.getElementById('rec-panel-hotels');
+        if (htlPanel && data.hotels) {
+            const top = data.hotels.slice().sort((a, b) => b.rating - a.rating).slice(0, 8);
+            htlPanel.innerHTML = `
+                <div class="rec-scroll">${top.map(h => {
+                    const best = Math.min(...Object.values(h.prices).filter(v => v > 0));
+                    return `
+                    <div class="rec-card" onclick="app.showDetail('hotel','${h.id}')">
+                        <div class="rec-card-img" style="background-image:url('${h.image}')">
+                            <span class="rec-card-badge">${sanitizeHTML(h.type)}</span>
+                            <span class="rec-card-rating"><i class="fas fa-star"></i> ${h.rating}</span>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-card-title">${sanitizeHTML(h.name)}</div>
+                            <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(h.address).substring(0, 20)}</div>
+                            <div class="rec-card-desc">${sanitizeHTML(h.description).substring(0, 60)}${h.description?.length > 60 ? '...' : ''}</div>
+                            <div class="rec-card-price">🏨 NT$${best.toLocaleString()}起/晚</div>
+                        </div>
+                    </div>`;
+                }).join('')}
+                </div>
+                <div class="rec-gp-search" onclick="app._recGoogleSearch('hotels')">
+                    <i class="fab fa-google"></i> 在 Google 地圖搜尋更多${sanitizeHTML(data.name)}住宿...
+                </div>`;
+        }
+    }
+
+    /** 從推薦區塊觸發 Google 搜尋 */
+    async _recGoogleSearch(type) {
+        const data = getDestData(this.selectedCity);
+        if (!data) return;
+        const ok = await this._ensureGooglePlaces();
+        if (!ok) return;
+
+        const queryMap = {
+            attractions: `${data.name} 熱門景點`,
+            restaurants: `${data.name} 必吃美食`,
+            hotels: `${data.name} 推薦住宿飯店`
+        };
+        const typeMap = { attractions: '', restaurants: 'restaurant', hotels: 'hotel' };
+
+        try {
+            this.showToast('🔍 搜尋中...');
+            const results = await window.placesService.searchPlaces(
+                queryMap[type],
+                data.center ? { lat: data.center.lat, lng: data.center.lng } : null,
+                typeMap[type],
+                10
+            );
+            if (!results.length) { this.showToast('未找到結果'); return; }
+
+            const panel = document.getElementById(`rec-panel-${type}`);
+            if (!panel) return;
+
+            // Append Google results below existing
+            let gpContainer = panel.querySelector('.rec-gp-results');
+            if (!gpContainer) {
+                gpContainer = document.createElement('div');
+                gpContainer.className = 'rec-gp-results';
+                // Insert before the search link
+                const searchLink = panel.querySelector('.rec-gp-search');
+                if (searchLink) panel.insertBefore(gpContainer, searchLink);
+                else panel.appendChild(gpContainer);
+            }
+
+            gpContainer.innerHTML = `
+                <div style="font-size:0.78rem;color:#4285f4;font-weight:600;margin:0.75rem 0 0.5rem;display:flex;align-items:center;gap:0.3rem">
+                    <i class="fab fa-google"></i> Google 地圖搜尋結果
+                </div>
+                <div class="rec-scroll">${results.map((p, i) => `
+                    <div class="rec-card" onclick="app.showGPDetail('${p._placeId || p.id}')" style="border-color:#4285f4">
+                        <div class="rec-card-img" style="background-image:url('${p.image}')">
+                            <span class="rec-card-badge" style="background:rgba(66,133,244,0.9)">${sanitizeHTML(p.type)}</span>
+                            ${p.rating ? `<span class="rec-card-rating"><i class="fas fa-star"></i> ${p.rating}</span>` : ''}
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-card-title">${sanitizeHTML(p.name)}</div>
+                            <div class="rec-card-meta"><i class="fas fa-map-marker-alt"></i> ${sanitizeHTML(p.address).substring(0, 25)}</div>
+                            ${p.description ? `<div class="rec-card-desc">${sanitizeHTML(p.description).substring(0, 60)}...</div>` : ''}
+                        </div>
+                    </div>`).join('')}
+                </div>`;
+
+            // Store for potential use
+            this._googleSearchResults = results;
+            this.showToast(`找到 ${results.length} 個結果`);
+        } catch (err) {
+            this.showToast('搜尋失敗：' + (err.message || '未知錯誤'));
         }
     }
 
@@ -1317,24 +1477,42 @@ class TravelApp {
     showDetail(type, id) {
         try {
         const data = getDestData(this.selectedCity);
-        const item = type==='attraction' ? data.attractions.find(a=>a.id===id) : data.restaurants.find(r=>r.id===id);
+        let item;
+        if (type === 'attraction') item = data.attractions.find(a => a.id === id);
+        else if (type === 'restaurant') item = data.restaurants.find(r => r.id === id);
+        else if (type === 'hotel') item = data.hotels?.find(h => h.id === id);
         if (!item) return;
         const stars = '★'.repeat(Math.floor(item.rating)) + (item.rating%1>=0.5?'½':'');
+
+        // Hotel-specific price info
+        let priceHTML = '';
+        if (type === 'hotel' && item.prices) {
+            const bp = this.getBestPrice(item.prices);
+            priceHTML = `<div class="modal-info-item"><div class="label">最低價</div><div class="value" style="color:var(--primary);font-weight:700">NT$${bp.price.toLocaleString()}/晚 (${bp.platform})</div></div>`;
+        } else {
+            const priceVal = item.ticket ?? item.price ?? 0;
+            priceHTML = `<div class="modal-info-item"><div class="label">${type==='attraction'?'門票':'每人消費'}</div><div class="value">${priceVal===0?'免費':`NT$${priceVal.toLocaleString()}`}</div></div>`;
+        }
+
         let html = `<div class="modal-image" style="background-image:url('${item.image}')"></div>
             <div class="modal-body-content">
                 <div class="modal-title">${item.name}</div>
-                <div class="modal-rating"><span class="stars">${stars}</span><span class="score">${item.rating}</span><span class="reviews">(${item.reviews.toLocaleString()} 則評論)</span></div>
+                <div class="modal-rating"><span class="stars">${stars}</span><span class="score">${item.rating}</span>${item.reviews ? `<span class="reviews">(${item.reviews.toLocaleString()} 則評論)</span>` : ''}</div>
                 <div class="recommend-reason"><h4><i class="fas fa-lightbulb"></i> 為什麼推薦？</h4><p>${item.reason||item.description}</p></div>
                 ${item.userReview?`<div style="background:#fefce8;padding:0.6rem;border-radius:var(--radius-sm);margin-bottom:0.75rem;font-size:0.8rem;color:#854d0e;font-style:italic"><i class="fas fa-quote-left" style="color:#eab308"></i> ${item.userReview}</div>`:''}
                 <div class="modal-desc">${item.description}</div>
                 <div class="modal-info-grid">
                     <div class="modal-info-item"><div class="label">類型</div><div class="value">${item.type}</div></div>
-                    <div class="modal-info-item"><div class="label">${type==='attraction'?'門票':'每人消費'}</div><div class="value">${(item.ticket||item.price)===0?'免費':`NT$${(item.ticket||item.price).toLocaleString()}`}</div></div>
+                    ${priceHTML}
                     ${item.hours?`<div class="modal-info-item"><div class="label">營業時間</div><div class="value">${item.hours}</div></div>`:''}
+                    ${item.checkIn?`<div class="modal-info-item"><div class="label">入住/退房</div><div class="value">${item.checkIn} / ${item.checkOut}</div></div>`:''}
                     ${item.duration?`<div class="modal-info-item"><div class="label">建議停留</div><div class="value">${item.duration}</div></div>`:''}
+                    ${item.address?`<div class="modal-info-item"><div class="label">地址</div><div class="value">${item.address}</div></div>`:''}
                     ${item.closedDays?`<div class="modal-info-item"><div class="label">公休日</div><div class="value" style="color:var(--danger)">${item.closedDays}</div></div>`:''}
                 </div>
-                ${item.recommended?`<div style="margin-bottom:0.75rem"><h4 style="font-size:0.85rem;margin-bottom:0.4rem"><i class="fas fa-star" style="color:var(--accent)"></i> 推薦必點</h4>${item.recommended.map(r=>`<div style="padding:0.2rem 0;font-size:0.8rem;border-bottom:1px dashed var(--border-solid)">${r}</div>`).join('')}</div>`:''}
+                ${item.amenities?.length?`<div style="margin-bottom:0.75rem"><h4 style="font-size:0.85rem;margin-bottom:0.4rem"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> 設施服務</h4><div style="display:flex;flex-wrap:wrap;gap:0.3rem">${item.amenities.map(a=>`<span style="background:var(--bg);padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;color:var(--text-secondary)">${a}</span>`).join('')}</div></div>`:''}
+                ${item.recommended?.length?`<div style="margin-bottom:0.75rem"><h4 style="font-size:0.85rem;margin-bottom:0.4rem"><i class="fas fa-star" style="color:var(--accent)"></i> 推薦必點</h4>${item.recommended.map(r=>`<div style="padding:0.2rem 0;font-size:0.8rem;border-bottom:1px dashed var(--border-solid)">${r}</div>`).join('')}</div>`:''}
+                ${type === 'hotel' && item.prices ? `<div style="margin-bottom:0.75rem"><h4 style="font-size:0.85rem;margin-bottom:0.4rem"><i class="fas fa-tags" style="color:var(--accent)"></i> 各平台比價</h4><div style="display:flex;flex-wrap:wrap;gap:0.4rem">${Object.entries(item.prices).map(([p,v])=>`<span style="background:${v===this.getBestPrice(item.prices).price?'var(--primary)':'var(--bg)'};color:${v===this.getBestPrice(item.prices).price?'white':'var(--text-secondary)'};padding:0.3rem 0.6rem;border-radius:6px;font-size:0.78rem;font-weight:500">${p}: NT$${v.toLocaleString()}</span>`).join('')}</div></div>` : ''}
             </div>
             <div class="modal-actions">
                 <button class="btn-outline" onclick="app.mapManager.showLocation('${item.name.replace(/'/g,"\\'")}',${item.lat},${item.lng},'${type}');app.closeModal('detail-modal')"><i class="fas fa-map"></i> 地圖</button>
